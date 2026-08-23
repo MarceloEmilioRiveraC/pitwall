@@ -24,16 +24,14 @@ when you want to fix something yourself.
 It installs nothing into your system terminal and nothing into your normal
 Claude Code setup. Delete the folder and it is gone.
 
-```
-+------------------+--------------------------------+---------------------------+
-|  spaces          |                                |  tree            diff     |
-|   * pitwall      |   claude / codex / any agent   |   > src/         @@ -1,4  |
-|                  |                                |   M app.ts       - old    |
-|  agents          |                                |   A util.ts      + new    |
-|   * claude  idle |                                |                           |
-+------------------+--------------------------------+---------------------------+
-   herdr sidebar          your agent                    herdr-file-viewer
-```
+<div align="center">
+<img src="docs/media/console.png" alt="The three panes: herdr sidebar on the left tracking the agent, Claude Code in the middle, and the file viewer on the right showing a live diff" width="960">
+</div>
+
+Left, the herdr sidebar: your workspaces with their branch, and every agent with
+its state. Middle, whatever agent you started. Right, the file viewer, one
+keypress away, showing the diff of the file the agent just changed. That diff is
+this README, edited moments before the screenshot was taken.
 
 ## 🏁 Why "pitwall"
 
@@ -148,6 +146,17 @@ Inside the file viewer:
 | `L` | Copy a `path:line` reference |
 | `e` | Edit it. micro opens in the same pane; the viewer returns when you quit |
 | `?` | Help |
+
+The viewer itself never writes a file. `e` steps it aside, runs the editor in
+the same pane, and brings it back when you quit, already showing your change as
+a diff:
+
+<div align="center">
+<img src="docs/media/editor.png" alt="micro editing a PowerShell file in the right-hand pane, with syntax highlighting in the same Rose Pine Moon palette" width="960">
+</div>
+
+No modes to learn: `ctrl+s` saves, `ctrl+q` quits, `ctrl+f` finds, and the mouse
+works.
 
 ## What it touches outside its own folder
 
@@ -284,20 +293,22 @@ herdr ships its own ConPTY runtime and will not run without it. Run
 someone.** It is not a product, there is no company behind it, and I make no
 money from it. It is open because there is no reason for it not to be.
 
-What that means in practice, so nobody's expectations get bruised:
+A few honest notes, so we start on the same page:
 
 - **It is built for how I work.** Decisions get made on what I need, and the
-  code stays the shape I want it. If something here does not suit your setup,
-  that is not a bug, and forking is genuinely the right answer.
-- **No roadmap, no release cadence, no support promise.** It gets attention
-  when I am using it and it annoys me, which is often, but not on a schedule.
-- **Issues are welcome and I do read them.** A bug report, a Windows quirk I
-  have not hit, a thing that is broken on your machine: all worth opening. Just
-  do not expect a triage SLA.
-- **Help is welcome when it is genuinely useful.** If you have a fix or an idea
-  that clearly makes the thing better, open a PR and I will look at it properly.
-  I would rather say a friendly no to something that pulls the project sideways
-  than merge it and resent it later.
+  code stays the shape I want it. Your setup is almost certainly different from
+  mine, and where my choices do not fit yours, forking is genuinely a good
+  answer. I would be glad to see it, not offended by it.
+- **No roadmap, no release cadence, no support promise.** I will not always
+  have time to look after this, and I would rather say that plainly now than
+  leave you guessing later.
+- **Issues are welcome, and I do read them.** If you hit a bug, or a Windows
+  quirk I have not run into, please open one. I will read it and I will try to
+  sort it out. The only thing I cannot promise is when.
+- **Help is welcome too.** If you have a fix or an idea that makes this better,
+  open a PR and I will give it a proper look. Some things will not fit where I
+  am taking the project, and if that happens I will just say so and explain the
+  reasoning. Nothing personal in either direction.
 
 Take it, fork it, strip it for parts. That is what it is here for.
 
