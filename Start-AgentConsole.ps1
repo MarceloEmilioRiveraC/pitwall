@@ -39,7 +39,7 @@ $ErrorActionPreference = 'Stop'
 $Root = $PSScriptRoot
 $Bin  = Join-Path $Root 'bin'
 $WtExe = Join-Path $Bin 'WindowsTerminal\WindowsTerminal.exe'
-$HerdrConfig = Join-Path $Root 'config\herdr\config.toml'
+$HerdrTemplate = Join-Path $Root 'config\herdr\config.toml'
 
 # ---------------------------------------------------------------------------
 # Preflight
@@ -51,7 +51,10 @@ if (-not (Test-Path $WtExe)) {
     exit 1
 }
 
-$missing = @('herdr.exe', 'lazygit.exe') |
+# conpty\conpty.dll is listed deliberately. herdr ships its own ConPTY runtime
+# and, without it, starts and exits instantly leaving a bare prompt and no log.
+# Catching it here beats letting the pane fail silently.
+$missing = @('herdr.exe', 'lazygit.exe', 'conpty\conpty.dll') |
            Where-Object { -not (Test-Path (Join-Path $Bin $_)) }
 if ($missing) {
     Write-Host "Missing from bin\: $($missing -join ', ')" -ForegroundColor Yellow
@@ -59,8 +62,8 @@ if ($missing) {
     exit 1
 }
 
-if (-not (Test-Path $HerdrConfig)) {
-    throw "herdr config not found at $HerdrConfig"
+if (-not (Test-Path $HerdrTemplate)) {
+    throw "herdr config template not found at $HerdrTemplate"
 }
 
 if (-not $WorkDir) { $WorkDir = Split-Path $Root -Parent }
@@ -70,22 +73,45 @@ if (-not (Test-Path $WorkDir)) { throw "WorkDir does not exist: $WorkDir" }
 # Session-scoped environment. Nothing here outlives the launched window.
 # ---------------------------------------------------------------------------
 
-# Bundle binaries win over anything installed system-wide.
+# Render the herdr config so the token is resolved before anything reads it.
+# platform\windows\pane-init.ps1 renders it again inside the pane, which is the
+# copy that actually counts. This one is for herdr CLI calls made from here.
 $env:PATH = "$Bin;$env:PATH"
+$renderedConfig = & (Join-Path $Root 'platform\windows\Build-HerdrConfig.ps1') -BundleRoot $Root
+$env:HERDR_CONFIG_PATH = $renderedConfig
 
-# Redirect herdr away from %APPDATA%\herdr onto the bundle config.
-$env:HERDR_CONFIG_PATH = $HerdrConfig
-
-$mode = 'personal'
+# Which mode runs is decided by which Windows Terminal profile is launched, not
+# by an environment variable.
+#
+# Windows Terminal starts a profile's command line with a fresh environment
+# rather than inheriting from whatever launched WindowsTerminal.exe. Verified:
+# CLAUDE_CONFIG_DIR exported here arrived unset inside the pane, so an
+# environment-based switch would have reported "clean" while loading the
+# personal profile. For a compliance feature that failure mode is unacceptable,
+# so the flag travels on the profile's command line where it cannot be lost.
 if ($Clean) {
-    $cleanProfile = Join-Path $Root 'config\claude'
-    New-Item -ItemType Directory -Force -Path $cleanProfile | Out-Null
+    $profileName = 'Agent Console (Clean)'
+    $mode        = 'clean (isolated Claude profile, own herdr session, separate login)'
+    New-Item -ItemType Directory -Force -Path (Join-Path $Root 'config\claude') | Out-Null
+}
+else {
+    $profileName = 'Agent Console'
+    $mode        = 'personal (your ~/.claude)'
+}
 
-    # Verified behaviour: with this set, Claude Code stores settings, session
-    # history and plugins here, and keeps its own sign-in. Your ~/.claude is
-    # neither read nor written.
-    $env:CLAUDE_CONFIG_DIR = $cleanProfile
-    $mode = 'clean (isolated Claude profile, separate login)'
+# Select the profile by GUID, not by name. Windows Terminal's command line does
+# not reliably accept a --profile name containing spaces and parentheses once it
+# has been through argument quoting, and it silently opens a default tab instead
+# of reporting the problem. Reading the guid out of the rendered settings keeps
+# a single source of truth.
+$runtimeSettings = Join-Path $Bin 'WindowsTerminal\settings\settings.json'
+$profileGuid = $null
+if (Test-Path $runtimeSettings) {
+    $parsed = Get-Content $runtimeSettings -Raw | ConvertFrom-Json
+    $profileGuid = ($parsed.profiles.list | Where-Object { $_.name -eq $profileName }).guid
+}
+if (-not $profileGuid) {
+    throw "Profile '$profileName' not found in $runtimeSettings. Run bootstrap.ps1 -Force."
 }
 
 # ---------------------------------------------------------------------------
@@ -94,9 +120,10 @@ if ($Clean) {
 Write-Host ''
 Write-Host '  agent console' -ForegroundColor Cyan
 Write-Host "    mode      $mode"
+Write-Host "    profile   $profileName  $profileGuid"
 Write-Host "    workdir   $WorkDir"
-Write-Host "    herdr cfg $HerdrConfig"
-if ($Clean) { Write-Host "    claude    $env:CLAUDE_CONFIG_DIR" }
+Write-Host "    herdr cfg $renderedConfig"
+if ($Clean) { Write-Host "    claude    $(Join-Path $Root 'config\claude')" }
 Write-Host ''
 Write-Host '    ctrl+b f      file viewer (tree left, diff right)' -ForegroundColor DarkGray
 Write-Host '    ctrl+b alt+g  lazygit' -ForegroundColor DarkGray
@@ -104,5 +131,9 @@ Write-Host '    ctrl+b ?      every keybinding' -ForegroundColor DarkGray
 Write-Host ''
 
 Start-Process -FilePath $WtExe `
-              -ArgumentList @('--startingDirectory', $WorkDir) `
+              -ArgumentList @(
+                  'new-tab',
+                  '--profile', $profileGuid,
+                  '--startingDirectory', $WorkDir
+              ) `
               -WorkingDirectory $WorkDir

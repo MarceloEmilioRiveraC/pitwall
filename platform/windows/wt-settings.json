@@ -38,6 +38,15 @@
         "suppressApplicationTitle": false
       },
       {
+        "guid": "{6f1de2a1-0000-4a10-9b0e-a9c0de17c003}",
+        "name": "Agent Console (Clean)",
+        "commandline": "pwsh.exe -NoLogo -NoExit -ExecutionPolicy Bypass -File \"__BUNDLE__\\platform\\windows\\pane-init.ps1\" -Clean",
+        "startingDirectory": "C:/dev",
+        "icon": "\ud83d\udd12",
+        "tabTitle": "agent-console-clean",
+        "_comment": "Isolated Claude profile and its own herdr session. Separate login."
+      },
+      {
         "guid": "{6f1de2a1-0000-4a10-9b0e-a9c0de17c002}",
         "name": "pwsh (bundle PATH)",
         "commandline": "pwsh.exe -NoLogo -NoExit -ExecutionPolicy Bypass -File \"__BUNDLE__\\platform\\windows\\pane-init.ps1\" -NoHerdr",

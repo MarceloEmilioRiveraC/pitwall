@@ -192,19 +192,83 @@ log, and left a bare prompt. Diagnosing it took a process-tree dump.
 Fixed by giving the manifest a `bundle` kind that copies the whole tree beside
 the exe. **[ran]**
 
-### `pwsh -Command herdr` does not start it from a Windows Terminal profile
+### Windows Terminal starts a profile with a fresh environment
 
-`Start-Process` does inherit a modified `$env:PATH`; that was tested and ruled
-out. **[ran]** Even so, `pwsh.exe -NoLogo -NoExit -Command herdr` as a profile
-`commandline` left `pwsh` running with no herdr child.
+The single most consequential finding of the build, because it broke three
+things before it was understood.
 
-Replaced with `pane-init.ps1`, which the profile runs by absolute path. It
-derives the bundle root from its own location, sets `PATH` and
-`HERDR_CONFIG_PATH` itself, calls `herdr.exe` by full path, and logs
-diagnostics to `bin\pane-init.log`.
+`Start-Process` does pass a modified `$env:PATH` to its child; that was tested
+directly and confirmed. **[ran]** But Windows Terminal does not hand its own
+environment to the command line a profile runs. Verified twice:
 
-This is better than the original regardless of the bug: the console now works
-when someone double-clicks `WindowsTerminal.exe` instead of using the launcher.
+- `pwsh -NoLogo -NoExit -Command herdr` in a profile left `pwsh` running with no
+  herdr child, because `herdr` was not on the profile's PATH even though the
+  launcher had put it there.
+- `CLAUDE_CONFIG_DIR`, exported by the launcher immediately before
+  `Start-Process`, arrived **unset** in the pane.
+
+Consequences and fixes:
+
+| Broken | Fix |
+|---|---|
+| herdr not found | `pane-init.ps1` derives the bundle root from its own path and calls `herdr.exe` by full path |
+| Mode could not be passed by env | Each mode is its own Windows Terminal profile, carrying `-Clean` on the command line |
+| Profile name with spaces and parentheses silently opened a default tab | Select the profile by GUID, read out of the rendered settings |
+
+### herdr rebuilds PATH for the panes it spawns
+
+Separate from the above, and found after it. Inside a herdr pane:
+
+```
+PS> $env:PATH.Split(";")[0..3]
+C:\Program Files\WindowsApps\Microsoft.PowerShell_...
+C:\windows\system32
+...
+PS> where.exe delta
+INFO: Could not find files for the given pattern(s).
+```
+
+`HERDR_CONFIG_PATH` arrives intact, so herdr passes environment variables
+through but rebuilds `PATH` from the system default. **[ran]** That made every
+binary in `bin\` invisible to panes and to the file viewer plugin, which looks
+for `delta`, `bat` and `glow` on PATH and had been silently falling back to
+plain text.
+
+herdr's config has no environment key, so the fix goes through
+`[terminal] default_shell`, which accepts an executable. `agent-shell.cmd`
+re-adds `bin\` from `%~dp0` and then starts PowerShell. Verified: `where.exe
+delta` inside a pane now returns `C:\devgent-consolein\delta.exe`, and the
+viewer renders diffs through delta instead of showing the fallback notice.
+**[ran]**
+
+Popup keybindings bypass `default_shell` (the default config notes that on
+Windows command strings run through `cmd.exe /d /c`), so the lazygit binding
+uses an absolute path from the same `__BUNDLE__` token.
+
+### A shared herdr server would have made -Clean a lie
+
+The worst bug of the build, and it only appears when both modes are used.
+
+herdr's server is persistent, and panes inherit the environment the **server**
+started with, not the client's. A clean-mode client attaching to a server that
+had been started in personal mode produced panes with no `CLAUDE_CONFIG_DIR`
+at all: the launcher printed "clean", and Claude Code loaded the full personal
+profile. **[ran]**
+
+For a compliance feature, a silent false negative is worse than a crash.
+
+Fixed by giving clean mode its own named herdr session. Named sessions get
+their own directory, socket and server process:
+
+```
+name      status   directory                                   socket
+default   stopped  %APPDATA%\herdr                             ...\herdr.sock
+clean     running  %APPDATA%\herdr\sessions\clean              ...\clean\herdr.sock
+```
+
+Verified end to end: in a clean pane, `$env:CLAUDE_CONFIG_DIR` reports the
+bundle profile and `claude plugin list` answers "No plugins installed", against
+the full personal list in personal mode. **[ran]**
 
 ### `Set-Content -Encoding UTF8` writes a BOM under PowerShell 5.1
 
@@ -239,7 +303,15 @@ does not exist; `plugins\cache\` is gone entirely. The script now lives at
 `plugins\marketplaces\ponytail\hooks\ponytail-statusline.ps1` and runs
 correctly from there. **[ran]**
 
-Outside this bundle's scope, reported separately.
+It then repaired itself: running `claude` during this session rebuilt
+`plugins\cache\`, and the configured path exists again. **[ran]** So the
+statusline is not currently broken.
+
+What remains is latent, not active: the version number is hardcoded, so the same
+failure returns the next time ponytail updates. The machine's own July bundle at
+`C:\dev\claude-setup-bundle` already solved this by globbing for the newest
+installed version. Left untouched here, since nothing is broken today and this
+is outside the bundle's scope.
 
 ## 10. Verification status
 
@@ -253,9 +325,13 @@ Outside this bundle's scope, reported separately.
 | 6 | The file viewer opens a second pane and its action exits 0 | **[ran]** |
 | 7 | `CLAUDE_CONFIG_DIR` isolates plugins and login | **[ran]** |
 | 8 | All three scripts parse under PowerShell 5.1 and 7 | **[ran]** |
-| 9 | The bundle works on a machine that is not this one | **not verified** |
-| 10 | `-Clean` mode end to end, including a fresh login | **not verified** |
-| 11 | Long-run stability of herdr on Windows | **not verified** |
+| 9 | The file viewer renders a real diff through delta, two columns | **[ran]** |
+| 10 | herdr detects the agent: sidebar shows `claude`, status `idle` | **[ran]** |
+| 11 | `-Clean` isolates: clean pane reports the bundle profile and lists no personal plugins | **[ran]** |
+| 12 | Clean mode runs its own herdr session with its own socket | **[ran]** |
+| 13 | The bundle works on a machine that is not this one | **not verified** |
+| 14 | A fresh login inside a clean profile | **not verified** |
+| 15 | Long-run stability of herdr on Windows | **not verified** |
 
 ## 11. Not checked
 

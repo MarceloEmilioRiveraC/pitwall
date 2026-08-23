@@ -69,12 +69,21 @@ Then install the file viewer once:
 
 Two modes:
 
-| Command | Claude Code reads | Use it for |
-|---|---|---|
-| `.\Start-AgentConsole.ps1` | your normal `~/.claude`: your plugins, your CLAUDE.md, your login | your own projects |
-| `.\Start-AgentConsole.ps1 -Clean` | `.\config\claude`: no personal plugins, no personal CLAUDE.md, its own login | client work, shared screens |
+| Command | Claude Code reads | herdr session | Use it for |
+|---|---|---|---|
+| `.\Start-AgentConsole.ps1` | your normal `~/.claude`: your plugins, your CLAUDE.md, your login | `default` | your own projects |
+| `.\Start-AgentConsole.ps1 -Clean` | `.\config\claude`: no personal plugins, no personal CLAUDE.md, its own login | `clean` | client work, shared screens |
 
 `-WorkDir <path>` opens somewhere other than the parent folder.
+
+The two modes get **separate herdr sessions on purpose**. herdr's server is
+persistent and the panes it spawns inherit the environment the server started
+with, so a clean client attaching to a personal server would have produced panes
+with no isolation at all while still reporting "clean". Separate sessions make
+that impossible.
+
+Each mode is also a Windows Terminal profile, so `ctrl+shift+t` inside a running
+window lets you open the other one in a new tab.
 
 ### Keys
 
@@ -154,8 +163,10 @@ agent-console/
     herdr/config.toml        theme, sidebar, keybindings, worktrees
     claude/                  the -Clean profile lands here, gitignored
   platform/windows/
-    wt-settings.json         Windows Terminal settings, __BUNDLE__ token
-    pane-init.ps1            what each pane runs
+    wt-settings.json         Windows Terminal profiles, __BUNDLE__ token
+    pane-init.ps1            what each pane runs, and where -Clean is applied
+    agent-shell.cmd          pane shell that re-adds bin\ to PATH
+    Build-HerdrConfig.ps1    renders the __BUNDLE__ token at launch
   docs/PLAN.md               the research behind every choice
   bin/                       gitignored, rebuilt by bootstrap.ps1
 ```
@@ -199,7 +210,14 @@ It is young. Expect rougher edges than on macOS.
 ## Troubleshooting
 
 A pane opens at a bare prompt instead of the console: read `bin\pane-init.log`.
-It records whether `herdr.exe`, `conpty\conpty.dll` and the config were found.
+It records the bundle root, whether `herdr.exe`, `conpty\conpty.dll` and the
+config were found, and which mode and herdr session the pane resolved to.
+
+The file viewer says a renderer is missing: `bin\` is not on the pane's PATH.
+herdr rebuilds PATH for the panes it spawns, which is why the pane shell is
+`platform\windowsgent-shell.cmd` rather than `pwsh` directly. Check that
+`default_shell` in `bin\herdr-config.toml` points at that wrapper, and re-run
+`bootstrap.ps1 -Force` if the rendered config looks stale.
 
 Icons render as empty boxes: the font did not install. Re-run
 `bootstrap.ps1 -Force` and check the count it reports.

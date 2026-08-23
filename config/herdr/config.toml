@@ -5,8 +5,18 @@
 # Only keys verified against https://herdr.dev/docs/configuration/ are set here.
 # To see everything available: herdr --default-config
 
+# Skip herdr's first-run notification setup. The bundle already sets
+# [ui.toast] below, so the wizard would only ask a question this config has
+# already answered. Note that omitting this key is not the same as false:
+# herdr's own default config says "Missing also shows onboarding".
+onboarding = false
+
 [terminal]
-default_shell = "pwsh"
+# Not "pwsh" directly. herdr rebuilds PATH for the panes it spawns, so this
+# wrapper re-adds the bundle bin before starting PowerShell. Without it,
+# delta, bat, glow and lazygit are invisible inside panes.
+# __BUNDLE__ is substituted at launch, see platform/windows/Build-HerdrConfig.ps1
+default_shell = "__BUNDLE__/platform/windows/agent-shell.cmd"
 shell_mode = "auto"
 new_cwd = "follow"
 
@@ -44,7 +54,7 @@ delivery = "herdr"
 delay_seconds = 1
 
 [worktrees]
-directory = "C:/dev/.worktrees"
+directory = "__BUNDLE__/../.worktrees"
 
 [session]
 resume_agents_on_restore = true
@@ -73,7 +83,7 @@ description = "file viewer (tab)"
 [[keys.command]]
 key = "prefix+alt+g"
 type = "popup"
-command = "lazygit"
+command = "__BUNDLE__/bin/lazygit.exe"
 description = "lazygit"
 width = "90%"
 height = "90%"

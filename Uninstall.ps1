@@ -71,7 +71,12 @@ if ($RemoveHerdrData) {
         Write-Host '    Stopping any running herdr server first' -ForegroundColor DarkGray
         $herdrExe = Join-Path $Root 'bin\herdr.exe'
         if (Test-Path $herdrExe) {
+            # Both sessions. Clean mode runs its own server under
+            # %APPDATA%\herdr\sessions\clean with its own socket, so stopping
+            # the default one is not enough to release the directory.
             & $herdrExe server stop 2>$null | Out-Null
+            & $herdrExe session stop clean 2>$null | Out-Null
+            Start-Sleep -Milliseconds 800
         }
         if ($PSCmdlet.ShouldProcess($herdrData, 'delete')) {
             Remove-Item $herdrData -Recurse -Force -ErrorAction SilentlyContinue
