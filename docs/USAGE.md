@@ -39,7 +39,7 @@ powershell -ExecutionPolicy Bypass -File .\Test-Bundle.ps1
 .\Start-AgentConsole.ps1
 ```
 
-`Test-Bundle.ps1` runs 38 checks: files, versions, config validity, a live
+`Test-Bundle.ps1` runs 40 checks: files, versions, config validity, a live
 herdr session it starts and tears down, and a confirmation that nothing outside
 the folder was touched. It prints a fix line for every failure. Run it whenever
 something is off, and paste its whole output if you need to ask someone.
@@ -372,6 +372,57 @@ dark_name  = "rose-pine"
 light_name = "rose-pine-dawn"
 ```
 
+**The content pane** is a third palette, and the one most likely to be the
+problem if reading a file is uncomfortable.
+
+The file viewer pipes content through `bat` for code, `delta` for diffs and
+`glow` for markdown. Their stock themes are tuned for their own backgrounds, not
+this one. Measured against `#232136`, the comment colour of each candidate, that
+being the dimmest thing any theme draws:
+
+| Theme | Contrast | |
+|---|---|---|
+| Catppuccin Macchiato | **5.62** | the default here, clears WCAG AA |
+| Catppuccin Mocha | 5.54 | |
+| gruvbox-dark | 4.26 | below AA |
+| Dracula | 3.32 | |
+| Monokai | 3.19 | bat's own default, the unreadable one |
+| TwoDark, OneHalfDark | 2.59 | |
+
+Change it in `config/file-viewer/config.toml`, which bootstrap renders into the
+directory `herdr plugin config-dir herdr-file-viewer` prints. It points at two
+wrappers rather than inline commands, because the viewer splits a command
+string on whitespace itself and delta's style arguments contain spaces:
+
+| File | Renders |
+|---|---|
+| `platform/windows/render-syntax.cmd` | code, through `bat --theme` |
+| `platform/windows/render-diff.cmd` | diffs, through `delta` with hand-picked backgrounds |
+
+`bat --list-themes` shows what you can put there. Two things to know before
+editing them:
+
+- **Overriding a renderer replaces the whole command.** Flags are not merged, so
+  every flag the default had has to be repeated.
+- **Both wrappers set `COLORTERM=truecolor`.** Without it bat and delta fall
+  back to 256-colour approximations and every palette arrives muddied, which
+  looks like a bad theme but is not.
+
+The diff backgrounds were picked the same way rather than by eye:
+
+| Role | Colour | Comment contrast | Text contrast |
+|---|---|---|---|
+| removed | `#3a2733` | 4.97 | 9.32 |
+| added | `#22342e` | 4.72 | 8.85 |
+| removed, word | `#54303e` | 4.04 | 7.57 |
+| added, word | `#2a5145` | 3.20 | 5.99 |
+
+The word-level pair sits lower on purpose: it marks changed tokens, which are
+never the dim colour, and both clear 4.5 for real changed text.
+
+Markdown is left at the plugin's own bundled palette. Overriding the `markdown`
+key would replace the whole command and lose it.
+
 **Windows Terminal**, in `platform/windows/wt-settings.json`, under `schemes`.
 That palette is what the text inside the panes uses. Keep the two roughly in
 agreement or the seams show.
@@ -380,16 +431,36 @@ agreement or the seams show.
 
 All in `platform/windows/wt-settings.json`. Run `bootstrap.ps1 -Force` after.
 
-**Transparency.** There are two different effects and they look nothing alike:
+**Transparency.** Two different effects that look nothing alike, and the choice
+between them is a real trade-off rather than a matter of taste.
 
-| Want | Settings | Result |
+| Want | Settings | What you get |
 |---|---|---|
-| See the wallpaper, sharp (the current default) | `"useAcrylic": false, "opacity": 88` | Plain alpha. You see what is actually behind |
-| Frosted glass | `"useAcrylic": true, "opacity": 72` | Blurs everything behind into a smooth wash |
-| Opaque | `"opacity": 100` | No transparency |
+| **Frosted glass (the default)** | `"useAcrylic": true, "opacity": 82` | Blurs whatever is behind into a smooth wash. Translucent, and never competes with the text in front |
+| Sharp wallpaper | `"useAcrylic": false, "opacity": 90` | Plain alpha. You see exactly what is behind, wallpaper detail included |
+| Opaque | `"opacity": 100` | No transparency at all |
 
-Lower `opacity` means more see-through. Below about 80 with `useAcrylic: false`
-text gets hard to read over a bright window. Tune it to your wallpaper.
+Plain alpha is the look of the WezTerm setups this bundle imitates, and it is
+genuinely nicer **over a wallpaper**. Over another window it is not: with no
+blur to average it out, the text of a bright window behind stays legible
+through the text in front, at any opacity worth having. Acrylic has no such
+problem because the blur destroys the detail. If your terminal usually sits
+over a browser or a chat app, keep acrylic.
+
+Lower `opacity` means more see-through, in both modes.
+
+There is a third way to get the reference look without the trade-off. Skip
+window transparency entirely and put the wallpaper *inside* the terminal:
+
+```json
+"opacity": 100,
+"backgroundImage": "C:/path/to/wallpaper.jpg",
+"backgroundImageOpacity": 0.18,
+"backgroundImageStretchMode": "uniformToFill"
+```
+
+That gives you a visible wallpaper, sharp, with nothing behind it ever bleeding
+in, because the window is opaque.
 
 If transparency does nothing at all, check Windows Settings, Personalisation,
 Colours, and make sure "Transparency effects" is on. It gates both effects.
@@ -417,15 +488,6 @@ layout wants. 9.5 buys roughly 25 more columns on a 1920 wide screen.
 Any Nerd Font works, but it **must** be a Nerd Font or the sidebar icons render
 as empty boxes. To bundle a different one, change the `JetBrainsMonoNerdFont`
 entry in the `bootstrap.ps1` manifest and the four filenames in `$wantedFaces`.
-
-**Background image**, if you want the reference screenshot's wallpaper look
-without relying on the desktop behind:
-
-```json
-"backgroundImage": "C:/path/to/wallpaper.jpg",
-"backgroundImageOpacity": 0.25,
-"backgroundImageStretchMode": "uniformToFill"
-```
 
 **Padding** around the text: `"padding": "12, 10, 12, 6"` as left, top, right,
 bottom.

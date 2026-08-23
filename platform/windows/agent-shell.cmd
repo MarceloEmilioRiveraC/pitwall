@@ -13,6 +13,11 @@ rem absolute path has to be baked in.
 set "AC_BIN=%~dp0..\..\bin"
 set "PATH=%AC_BIN%;%PATH%"
 
+rem Without this, colour-aware tools fall back to 256-colour approximations and
+rem every palette arrives muddied. Windows Terminal 1.25 renders 24-bit colour
+rem fine; nothing was telling the programs inside the pane that.
+set "COLORTERM=truecolor"
+
 rem Prefer PowerShell 7. Fall back to Windows PowerShell so a machine without
 rem pwsh still gets a working pane instead of an empty one.
 where /q pwsh.exe && (

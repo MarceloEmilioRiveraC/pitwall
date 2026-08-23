@@ -1,14 +1,14 @@
 {
   "$help": "https://aka.ms/terminal-documentation",
   "$schema": "https://aka.ms/terminal-profiles-schema",
-  "_comment": "Portable Windows Terminal settings for the agent console. bootstrap.ps1 substitutes __BUNDLE__ and copies this next to WindowsTerminal.exe as settings/settings.json. Your system-wide Windows Terminal never reads this file.",
+  "_comment": "Portable Windows Terminal settings for the agent console. bootstrap.ps1 substitutes __BUNDLE__ and copies this next to WindowsTerminal.exe as settings/settings.json. Your system-wide Windows Terminal never reads this file. useAcrylic true blurs whatever is behind the window: it keeps the layered look without letting the text of a bright window behind bleed through the text in front. Set useAcrylic false for the sharp wallpaper look, which only reads well when a wallpaper is what is actually behind. See docs/USAGE.md.",
   "defaultProfile": "{6f1de2a1-0000-4a10-9b0e-a9c0de17c001}",
   "copyOnSelect": false,
   "copyFormatting": "none",
   "focusFollowMouse": false,
   "showTabsInTitlebar": true,
   "alwaysShowTabs": false,
-  "useAcrylicInTabRow": false,
+  "useAcrylicInTabRow": true,
   "profiles": {
     "defaults": {
       "font": {
@@ -17,8 +17,8 @@
         "weight": "normal"
       },
       "colorScheme": "Rose Pine Moon",
-      "useAcrylic": false,
-      "opacity": 88,
+      "useAcrylic": true,
+      "opacity": 82,
       "padding": "12, 10, 12, 6",
       "scrollbarState": "hidden",
       "historySize": 20000,

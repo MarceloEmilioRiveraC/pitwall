@@ -173,6 +173,23 @@ Test-Item 'pane shell wrapper exists (without it delta, bat and glow are invisib
     Test-Path (Join-Path $Root 'platform\windows\agent-shell.cmd')
 } -Fix 'The repo is incomplete. Re-clone it.'
 
+Test-Item 'file viewer colour config installed' {
+    $herdrExe = Join-Path $Bin 'herdr.exe'
+    $dir = (& $herdrExe plugin config-dir herdr-file-viewer 2>$null | Out-String).Trim()
+    if (-not $dir) { return @($false, 'plugin not installed') }
+    $cfg = Join-Path $dir 'config.toml'
+    if (-not (Test-Path $cfg)) { return @($false, "not found at $cfg") }
+    $raw = Get-Content $cfg -Raw
+    if ($raw -match '__BUNDLE__') { return @($false, 'token was not substituted') }
+    @(($raw -match 'render-syntax\.cmd' -and $raw -match 'render-diff\.cmd'), $cfg)
+} -Fix 'bootstrap.ps1 -Force. Without it the viewer uses bat and delta defaults, whose comment colour scores 3.19 against this background where 4.5 is the readable minimum.'
+
+Test-Item 'both renderer wrappers exist' {
+    $a = Test-Path (Join-Path $Root 'platform/windows/render-syntax.cmd')
+    $b = Test-Path (Join-Path $Root 'platform/windows/render-diff.cmd')
+    @(($a -and $b), "syntax=$a diff=$b")
+} -Fix 'The repo is incomplete. Re-clone it.'
+
 Test-Item 'Nerd Font registered for this user' {
     $k = 'HKCU:\Software\Microsoft\Windows NT\CurrentVersion\Fonts'
     $n = @(Get-ItemProperty $k -ErrorAction SilentlyContinue |

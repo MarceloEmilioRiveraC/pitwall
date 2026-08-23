@@ -62,7 +62,7 @@ Then install the file viewer once, and verify:
 powershell -ExecutionPolicy Bypass -File .\Test-Bundle.ps1
 ```
 
-`Test-Bundle.ps1` runs 38 checks across three passes: files and configuration, a
+`Test-Bundle.ps1` runs 40 checks across three passes: files and configuration, a
 live herdr session it starts and tears down, and a confirmation that nothing
 outside this folder was touched. Every failure prints what was expected, what was
 found, and how to fix it. If you need to ask someone for help, paste its whole
@@ -162,21 +162,31 @@ Explicitly **not** touched:
 | [glow](https://github.com/charmbracelet/glow) | 3.0.0 | Markdown rendering |
 | [JetBrainsMono Nerd Font](https://github.com/ryanoasis/nerd-fonts) | 3.5.1 | Icons in the sidebar |
 
+The content pane's colours are not the stock ones. Against this bundle's
+background, the comment colour of bat's default theme scores 3.19 for contrast
+where 4.5 is the readable minimum, so both renderers are pinned to Catppuccin
+Macchiato (5.62) through wrappers in `platform/windows/`. The reasoning, the
+measurements and how to change it are in
+[docs/USAGE.md](docs/USAGE.md#colours-and-theme).
+
 ## Layout
 
 ```
 agent-console/
   bootstrap.ps1              build bin\ from the manifest
   Start-AgentConsole.ps1     the launcher, personal and -Clean modes
-  Test-Bundle.ps1            38 checks: static, live, and global footprint
+  Test-Bundle.ps1            40 checks: static, live, and global footprint
   Uninstall.ps1              reverse the two global side effects
   config/                    cross platform: works as-is on macOS and Linux
     herdr/config.toml        theme, sidebar, keybindings, worktrees
+    file-viewer/config.toml  which renderers the content pane uses
     claude/                  the -Clean profile lands here, gitignored
   platform/windows/
     wt-settings.json         Windows Terminal profiles, __BUNDLE__ token
     pane-init.ps1            what each pane runs, and where -Clean is applied
     agent-shell.cmd          pane shell that re-adds bin\ to PATH
+    render-syntax.cmd        bat, themed for contrast
+    render-diff.cmd          delta, themed for contrast
     Build-HerdrConfig.ps1    renders the __BUNDLE__ token at launch
   docs/USAGE.md              the user manual: every key, every setting
   docs/PLAN.md               the research behind every choice

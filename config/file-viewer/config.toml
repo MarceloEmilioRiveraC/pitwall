@@ -1,0 +1,57 @@
+# herdr-file-viewer configuration for the agent console
+# =============================================================================
+#
+# bootstrap.ps1 renders this file (substituting __BUNDLE__) into the directory
+# that `herdr plugin config-dir herdr-file-viewer` prints, which lives under
+# %APPDATA%\herdr. The viewer reads it on relaunch. Press `?` inside the viewer
+# and open the Settings tab to see what is actually in effect.
+#
+# Why override the renderers at all
+# ---------------------------------
+# The stock themes are hard to read against this bundle's Rose Pine Moon
+# background (#232136). Contrast of each candidate theme's comment colour, the
+# dimmest thing any theme draws, measured against that background:
+#
+#   Catppuccin Macchiato  5.62   <- chosen, clears WCAG AA (4.5)
+#   Catppuccin Mocha      5.54
+#   gruvbox-dark          4.26
+#   Dracula               3.32
+#   Monokai, bat default  3.19   <- the one that was unreadable
+#   TwoDark, OneHalfDark  2.59
+#
+# Two things matter beyond the theme:
+#
+#   1. COLORTERM must say truecolor or bat and delta fall back to 256-colour
+#      approximations, which muddies every colour before it is drawn. The
+#      wrappers set it.
+#   2. Overriding a renderer REPLACES the whole command. Flags are not merged,
+#      so each wrapper repeats every flag the default had.
+#
+# Both renderers are .cmd wrappers rather than one-line commands here because
+# the viewer splits a command string on whitespace itself, and delta's style
+# arguments contain spaces inside quotes. Letting cmd.exe do the quoting keeps
+# it predictable and testable from a shell.
+
+# --- Content pane renderers --------------------------------------------------
+
+# Syntax highlighting. {name} is substituted with the file name so bat can pick
+# the language; content arrives on stdin.
+syntax = "__BUNDLE__/platform/windows/render-syntax.cmd {name}"
+
+# Diffs. A unified diff arrives on stdin.
+diff = "__BUNDLE__/platform/windows/render-diff.cmd"
+
+# Markdown is deliberately left alone. The plugin points glow at its own bundled
+# palette (assets/markdown-style.json) and overriding this key would replace the
+# whole command and lose it. To take it over anyway:
+#markdown = "glow -s dark -w 0 -"
+
+# --- Editor ------------------------------------------------------------------
+
+# Opened by the `e` key. Falls back to $EDITOR, then a platform default.
+#editor = "code --wait"
+
+# --- Startup toggles ---------------------------------------------------------
+
+#hide_dotfiles = false
+#show_ignored = false

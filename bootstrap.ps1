@@ -277,6 +277,40 @@ $noBom = New-Object System.Text.UTF8Encoding($false)
 Write-Ok "settings.json installed, bundle root resolved to $Root"
 
 # ---------------------------------------------------------------------------
+# 3b. File viewer configuration
+#
+# The plugin reads its config from a directory under %APPDATA%\herdr that only
+# herdr can name, so this cannot live in the bundle and be found. Render it
+# there instead, from the versioned template, so the readable-colour settings
+# travel with the repo rather than being something each machine rediscovers.
+# ---------------------------------------------------------------------------
+Write-Step 'Configuring the file viewer'
+
+$viewerTemplate = Join-Path $Root 'config\file-viewer\config.toml'
+if (-not (Test-Path $viewerTemplate)) {
+    Write-Note 'config\file-viewer\config.toml missing, skipping'
+}
+elseif (-not (Test-Path $herdrExe)) {
+    Write-Note 'herdr.exe not available yet, skipping'
+}
+else {
+    $viewerDir = (& $herdrExe plugin config-dir herdr-file-viewer 2>$null | Out-String).Trim()
+
+    if (-not $viewerDir) {
+        Write-Note 'The file viewer plugin is not installed yet. Run:'
+        Write-Note '  .\bin\herdr.exe plugin install smarzban/herdr-file-viewer --yes'
+        Write-Note '  then re-run bootstrap.ps1 to install its colour settings'
+    }
+    else {
+        New-Item -ItemType Directory -Force -Path $viewerDir | Out-Null
+        $text  = (Get-Content $viewerTemplate -Raw).Replace('__BUNDLE__', $Root.Replace('\', '/'))
+        $noBom = New-Object System.Text.UTF8Encoding($false)
+        [System.IO.File]::WriteAllText((Join-Path $viewerDir 'config.toml'), $text, $noBom)
+        Write-Ok "viewer config -> $viewerDir"
+    }
+}
+
+# ---------------------------------------------------------------------------
 # 4. Font, current user only, no admin
 # ---------------------------------------------------------------------------
 if ($SkipFont) {
