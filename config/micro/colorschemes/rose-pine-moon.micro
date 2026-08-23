@@ -1,0 +1,56 @@
+# Rose Pine Moon for micro, matching the rest of the console.
+#
+# Colours are not picked by eye. Each one that carries text was measured for
+# contrast against the background (#232136); WCAG AA wants 4.5:
+#
+#   text     #e0def4  11.86
+#   gold     #f6c177   9.55
+#   foam     #9ccfd8   9.19
+#   iris     #c4a7e7   7.47
+#   rose     #ea9a97   7.13
+#   love     #eb6f92   5.38
+#   subtle   #908caa   4.86   <- comments use this
+#   pine     #3e8fb0   4.29   avoided for text, just short of AA
+#   muted    #6e6a86   3.03   gutter only, never text
+#
+# The obvious choice for comments would have been `muted`, the palette's own
+# comment colour. At 3.03 it is the same mistake that made the file viewer
+# unreadable, so comments use `subtle` instead.
+
+color-link default                "#e0def4,#232136"
+
+color-link comment                "#908caa"
+color-link identifier             "#9ccfd8"
+color-link identifier.class       "#f6c177"
+color-link identifier.var         "#e0def4"
+color-link constant               "#c4a7e7"
+color-link constant.number        "#c4a7e7"
+color-link constant.string        "#f6c177"
+color-link constant.bool          "#ea9a97"
+color-link statement              "#eb6f92"
+color-link symbol                 "#908caa"
+color-link symbol.brackets        "#908caa"
+color-link symbol.tag             "#eb6f92"
+color-link type                   "#f6c177"
+color-link type.keyword           "#eb6f92"
+color-link preproc                "#ea9a97"
+color-link special                "#ea9a97"
+color-link ignore                 "#908caa"
+
+color-link error                  "bold #eb6f92"
+color-link todo                   "bold #f6c177"
+
+color-link statusline             "#e0def4,#2a273f"
+color-link tabbar                 "#e0def4,#2a273f"
+color-link indent-char            "#44415a"
+color-link line-number            "#6e6a86"
+color-link current-line-number    "#e0def4"
+color-link gutter-error           "#eb6f92"
+color-link gutter-warning         "#f6c177"
+color-link cursor-line            "#2a273f"
+color-link color-column           "#2a273f"
+color-link selection              "#e0def4,#44415a"
+color-link match-brace            "#e0def4,#44415a"
+color-link diff-added             "#3e8fb0"
+color-link diff-modified          "#f6c177"
+color-link diff-deleted           "#eb6f92"

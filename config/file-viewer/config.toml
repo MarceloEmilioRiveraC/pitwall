@@ -47,9 +47,27 @@ diff = "__BUNDLE__/platform/windows/render-diff.cmd"
 #markdown = "glow -s dark -w 0 -"
 
 # --- Editor ------------------------------------------------------------------
+#
+# The `e` key suspends the viewer, runs this in the same pane, and resumes when
+# it exits. The viewer never writes a file itself.
+#
+# Setting this key rather than relying on $EDITOR is deliberate. The viewer
+# reads $EDITOR from the herdr SERVER's environment, not from the shell you are
+# attached to, so anything exported by the launcher never arrives. Verified by
+# running it: with EDITOR unset the viewer answers "Could not open editor:
+# program not found", and with a bare `vim` it answers the same because Git for
+# Windows' vim is not resolvable from a native Windows process.
+#
+# A wrapper, not micro.exe directly, so micro's config stays inside the bundle
+# and a bundle path containing spaces still works. See
+# platform/windows/edit.cmd.
+editor = "__BUNDLE__/platform/windows/edit.cmd"
 
-# Opened by the `e` key. Falls back to $EDITOR, then a platform default.
+# Alternatives, if micro is not to your taste:
+#   VS Code, opens in its own window rather than in the pane
 #editor = "code --wait"
+#   Whatever is already on your Windows PATH
+#editor = "notepad"
 
 # --- Startup toggles ---------------------------------------------------------
 

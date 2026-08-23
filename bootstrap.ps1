@@ -74,6 +74,14 @@ $Manifest = @(
         Url  = 'https://github.com/charmbracelet/glow/releases/download/v3.0.0/glow_3.0.0_Windows_x86_64.zip'
     }
     @{
+        # The editor the file viewer hands off to on `e`. micro rather than vim
+        # or helix because it is a 4 MB single binary with the shortcuts
+        # everyone already knows (ctrl+s, ctrl+q, ctrl+f) and mouse support,
+        # so nothing has to be learned to fix a typo.
+        Name = 'micro'; Version = '2.0.15'; Kind = 'exe'; Exe = 'micro.exe'
+        Url  = 'https://github.com/zyedidia/micro/releases/download/v2.0.15/micro-2.0.15-win64.zip'
+    }
+    @{
         Name = 'JetBrainsMonoNerdFont'; Version = '3.5.1'; Kind = 'font'
         Url  = 'https://github.com/ryanoasis/nerd-fonts/releases/download/v3.5.1/JetBrainsMono.zip'
     }
@@ -275,6 +283,29 @@ $noBom = New-Object System.Text.UTF8Encoding($false)
                                $settingsRendered, $noBom)
 
 Write-Ok "settings.json installed, bundle root resolved to $Root"
+
+# ---------------------------------------------------------------------------
+# 3c. Editor configuration
+#
+# micro reads MICRO_CONFIG_HOME, which platform\windows\edit.cmd points at
+# bin\micro-config. Seed it from the versioned template so the colourscheme and
+# settings travel with the repo, while micro's own runtime writes (cursor
+# history, anything changed in-app) stay out of git.
+# ---------------------------------------------------------------------------
+Write-Step 'Configuring the editor'
+
+$microSource = Join-Path $Root 'config\micro'
+$microTarget = Join-Path $Bin  'micro-config'
+
+if (-not (Test-Path $microSource)) {
+    Write-Note 'config\micro missing, skipping'
+}
+else {
+    New-Item -ItemType Directory -Force -Path (Join-Path $microTarget 'colorschemes') | Out-Null
+    Copy-Item (Join-Path $microSource '*') $microTarget -Recurse -Force
+    $schemes = @(Get-ChildItem (Join-Path $microTarget 'colorschemes') -Filter *.micro -File).Count
+    Write-Ok "micro config -> bin\micro-config ($schemes colourscheme(s))"
+}
 
 # ---------------------------------------------------------------------------
 # 3b. File viewer configuration

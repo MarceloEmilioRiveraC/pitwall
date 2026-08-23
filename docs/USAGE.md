@@ -19,6 +19,7 @@ If you only read one section, read [The daily loop](#the-daily-loop).
   - [Your own commands](#your-own-commands)
   - [Colours and theme](#colours-and-theme)
   - [The look: transparency, chrome, font](#the-look-transparency-chrome-font)
+  - [The editor](#the-editor)
   - [The sidebar](#the-sidebar)
   - [Which shell the panes use](#which-shell-the-panes-use)
   - [Worktrees](#worktrees)
@@ -92,10 +93,24 @@ Three regions on screen:
 6. See something wrong? Press `A` to annotate the range, then `y` to copy the
    note, and paste it into the agent's prompt. It gets the file, the lines and
    your comment, without you describing where anything is.
-7. `ctrl+b alt+g` for lazygit when you want to stage, commit or discard.
+7. Need to fix something yourself? Press `e`. The viewer steps aside, micro
+   opens **in the same pane** on that file, and the viewer comes back when you
+   quit, already showing your change as a diff.
+8. `ctrl+b alt+g` for lazygit when you want to stage, commit or discard.
 
-The viewer is **read-only** by design. It cannot damage what the agent wrote.
-Press `e` to hand a file to your editor when you do want to change it.
+The viewer itself is **read-only** by design, and that is the point: reviewing
+cannot damage what the agent wrote. Editing happens in the editor it hands off
+to, never in the viewer.
+
+Two ways to get a change made, and they are for different things:
+
+| You want | Do this |
+|---|---|
+| A typo, a constant, a quick fix | `e`, edit, `ctrl+s`, `ctrl+q` |
+| Anything the agent should understand | `A` to annotate the range, `y` to copy, paste into the agent |
+
+The annotation carries the file, the lines and your comment, so the agent does
+not have to be told where to look.
 
 ### Getting more room for the diff
 
@@ -168,6 +183,22 @@ resize, right-click for a context menu.
 | `e` | Open in your editor |
 | `O` / `R` | Open in the OS app / reveal in file manager |
 | `?` | Help overlay |
+
+### Inside micro, the editor
+
+`e` opens it. No modes, and the mouse works.
+
+| Key | Action |
+|---|---|
+| `ctrl+s` | Save |
+| `ctrl+q` | Quit, back to the viewer |
+| `ctrl+z` / `ctrl+y` | Undo / redo |
+| `ctrl+f` | Find, then `ctrl+n` / `ctrl+p` for next and previous |
+| `ctrl+c` / `ctrl+v` / `ctrl+x` | Copy, paste, cut |
+| `ctrl+g` | Help |
+| `ctrl+e` | Command prompt, for `replace`, `goto` and the rest |
+
+Nothing is auto-saved. Quitting with unsaved changes asks first.
 
 ### Windows Terminal
 
@@ -491,6 +522,55 @@ entry in the `bootstrap.ps1` manifest and the four filenames in `$wantedFaces`.
 
 **Padding** around the text: `"padding": "12, 10, 12, 6"` as left, top, right,
 bottom.
+
+### The editor
+
+`e` hands the selected file to whatever `editor` names in
+`config/file-viewer/config.toml`, which bootstrap renders into the plugin's
+config directory. The viewer suspends, the editor runs in the same pane, and
+the viewer resumes when the editor exits.
+
+The default points at a wrapper, not at micro directly:
+
+```toml
+editor = "__BUNDLE__/platform/windows/edit.cmd"
+```
+
+`platform/windows/edit.cmd` sets `MICRO_CONFIG_HOME` to `bin/micro-config` so
+micro leaves nothing in `%APPDATA%\micro`, sets `COLORTERM`, and resolves the
+bundle from its own location so a path with spaces still works.
+
+To use something else, replace the value:
+
+```toml
+editor = "code --wait"     # VS Code, opens in its own window not the pane
+editor = "notepad"         # anything already on the Windows PATH
+```
+
+`--wait` matters for editors that fork: without it the viewer resumes
+immediately and you end up editing behind it.
+
+**Do not rely on `$EDITOR` here.** The viewer reads it from the herdr
+*server's* environment, not the shell you are attached to, so anything the
+launcher exports never arrives. Verified: with `EDITOR` unset the viewer
+answers "Could not open editor: program not found". The config key sidesteps it.
+
+micro's own settings live in `config/micro/`:
+
+| File | What |
+|---|---|
+| `settings.json` | mouse, soft wrap, tab size, clipboard, status line |
+| `colorschemes/rose-pine-moon.micro` | the palette, matched to the rest of the console |
+
+Both are copied into `bin/micro-config/` by bootstrap, so run
+`bootstrap.ps1 -Force` after editing them. micro's runtime writes stay in
+`bin/` and out of git.
+
+The colourscheme was built the same way as the content pane: every colour that
+carries text measured against `#232136`. Worth knowing if you write your own,
+because the palette's own `muted` (`#6e6a86`) scores 3.03 and is exactly the
+kind of choice that makes comments unreadable. Comments use `subtle`
+(`#908caa`, 4.86) instead.
 
 ### The sidebar
 

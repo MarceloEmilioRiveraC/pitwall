@@ -184,6 +184,30 @@ Test-Item 'file viewer colour config installed' {
     @(($raw -match 'render-syntax\.cmd' -and $raw -match 'render-diff\.cmd'), $cfg)
 } -Fix 'bootstrap.ps1 -Force. Without it the viewer uses bat and delta defaults, whose comment colour scores 3.19 against this background where 4.5 is the readable minimum.'
 
+Test-Item 'editor wired up for the `e` key' {
+    $herdrExe = Join-Path $Bin 'herdr.exe'
+    $dir = (& $herdrExe plugin config-dir herdr-file-viewer 2>$null | Out-String).Trim()
+    if (-not $dir) { return @($false, 'plugin not installed') }
+    $cfg = Join-Path $dir 'config.toml'
+    if (-not (Test-Path $cfg)) { return @($false, 'viewer config missing') }
+    $line = (Get-Content $cfg | Where-Object { $_ -match '^\s*editor\s*=' } | Select-Object -First 1)
+    @([bool]$line, $line)
+} -Fix 'bootstrap.ps1 -Force. Without an editor configured, pressing `e` in the viewer answers "Could not open editor".'
+
+Test-Item 'micro and its wrapper are present' {
+    $a = Test-Path (Join-Path $Bin 'micro.exe')
+    $b = Test-Path (Join-Path $Root 'platform/windows/edit.cmd')
+    @(($a -and $b), "micro=$a wrapper=$b")
+} -Fix 'bootstrap.ps1 -Force'
+
+Test-Item 'micro config seeded inside the bundle, not %APPDATA%' {
+    $scheme = Join-Path $Bin 'micro-config\colorschemes\rose-pine-moon.micro'
+    $settings = Join-Path $Bin 'micro-config\settings.json'
+    if (-not (Test-Path $settings)) { return @($false, 'settings.json missing') }
+    $null = Get-Content $settings -Raw | ConvertFrom-Json
+    @((Test-Path $scheme), 'MICRO_CONFIG_HOME is set by edit.cmd to bin\micro-config')
+} -Fix 'bootstrap.ps1 -Force'
+
 Test-Item 'both renderer wrappers exist' {
     $a = Test-Path (Join-Path $Root 'platform/windows/render-syntax.cmd')
     $b = Test-Path (Join-Path $Root 'platform/windows/render-diff.cmd')

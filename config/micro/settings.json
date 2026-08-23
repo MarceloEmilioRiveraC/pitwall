@@ -1,0 +1,22 @@
+{
+    "colorscheme": "rose-pine-moon",
+    "mouse": true,
+    "clipboard": "external",
+    "softwrap": true,
+    "wordwrap": true,
+    "scrollbar": true,
+    "ruler": true,
+    "diffgutter": true,
+    "savecursor": true,
+    "saveundo": false,
+    "tabsize": 4,
+    "tabstospaces": true,
+    "autosave": 0,
+    "eofnewline": true,
+    "rmtrailingws": false,
+    "fastdirty": false,
+    "keepautoindent": true,
+    "matchbrace": true,
+    "statusformatleft": "$(filename) $(modified)$(overwrite)| ff:$(opt:fileformat) | $(opt:filetype) | $(opt:encoding)",
+    "statusformatright": "$(bind:ToggleHelp) help | $(bind:Save) save | $(bind:Quit) quit | ln $(line):$(col)"
+}

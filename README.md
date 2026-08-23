@@ -4,7 +4,8 @@ A portable, self-contained terminal control room for coding agents on Windows.
 
 One folder. You run one script and get a terminal with an agent sidebar on the
 left, your agent in the middle, and a git-aware file viewer on the right that
-shows the diff of whatever the agent just touched.
+shows the diff of whatever the agent just touched, and opens an editor on it
+when you want to fix something yourself.
 
 It installs nothing into your system terminal and nothing into your normal
 Claude Code setup. Delete the folder and it is gone.
@@ -45,7 +46,7 @@ Two reasons, and the second is the one that shaped the design.
 | An agent CLI | Claude Code, Codex, opencode, whatever you already use |
 | No admin rights | Nothing here needs elevation |
 
-About 190 MB of downloads, roughly 100 MB on disk once built.
+About 195 MB of downloads, roughly 115 MB on disk once built.
 
 ## Install
 
@@ -62,7 +63,7 @@ Then install the file viewer once, and verify:
 powershell -ExecutionPolicy Bypass -File .\Test-Bundle.ps1
 ```
 
-`Test-Bundle.ps1` runs 40 checks across three passes: files and configuration, a
+`Test-Bundle.ps1` runs 43 checks across three passes: files and configuration, a
 live herdr session it starts and tears down, and a confirmation that nothing
 outside this folder was touched. Every failure prints what was expected, what was
 found, and how to fix it. If you need to ask someone for help, paste its whole
@@ -122,7 +123,7 @@ Inside the file viewer:
 | `p` | Pin a file and keep browsing |
 | `a` / `A` | Annotate a range to hand to the agent |
 | `L` | Copy a `path:line` reference |
-| `e` | Open in your editor |
+| `e` | Edit it. micro opens in the same pane; the viewer returns when you quit |
 | `?` | Help |
 
 ## What it touches outside its own folder
@@ -160,6 +161,7 @@ Explicitly **not** touched:
 | [delta](https://github.com/dandavison/delta) | 0.19.2 | Diff rendering |
 | [bat](https://github.com/sharkdp/bat) | 0.26.1 | Syntax highlighting |
 | [glow](https://github.com/charmbracelet/glow) | 3.0.0 | Markdown rendering |
+| [micro](https://github.com/zyedidia/micro) | 2.0.15 | The editor `e` hands off to. 4 MB, no modes, mouse works |
 | [JetBrainsMono Nerd Font](https://github.com/ryanoasis/nerd-fonts) | 3.5.1 | Icons in the sidebar |
 
 The content pane's colours are not the stock ones. Against this bundle's
@@ -175,11 +177,12 @@ measurements and how to change it are in
 agent-console/
   bootstrap.ps1              build bin\ from the manifest
   Start-AgentConsole.ps1     the launcher, personal and -Clean modes
-  Test-Bundle.ps1            40 checks: static, live, and global footprint
+  Test-Bundle.ps1            43 checks: static, live, and global footprint
   Uninstall.ps1              reverse the two global side effects
   config/                    cross platform: works as-is on macOS and Linux
     herdr/config.toml        theme, sidebar, keybindings, worktrees
-    file-viewer/config.toml  which renderers the content pane uses
+    file-viewer/config.toml  which renderers and editor the viewer uses
+    micro/                   editor settings and colourscheme
     claude/                  the -Clean profile lands here, gitignored
   platform/windows/
     wt-settings.json         Windows Terminal profiles, __BUNDLE__ token
@@ -187,6 +190,7 @@ agent-console/
     agent-shell.cmd          pane shell that re-adds bin\ to PATH
     render-syntax.cmd        bat, themed for contrast
     render-diff.cmd          delta, themed for contrast
+    edit.cmd                 micro, with its config kept inside the bundle
     Build-HerdrConfig.ps1    renders the __BUNDLE__ token at launch
   docs/USAGE.md              the user manual: every key, every setting
   docs/PLAN.md               the research behind every choice
