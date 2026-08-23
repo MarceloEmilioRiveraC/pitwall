@@ -3,14 +3,12 @@
   "$schema": "https://aka.ms/terminal-profiles-schema",
   "_comment": "Portable Windows Terminal settings for the agent console. bootstrap.ps1 substitutes __BUNDLE__ and copies this next to WindowsTerminal.exe as settings/settings.json. Your system-wide Windows Terminal never reads this file.",
   "defaultProfile": "{6f1de2a1-0000-4a10-9b0e-a9c0de17c001}",
-  "initialCols": 200,
-  "initialRows": 50,
   "copyOnSelect": false,
   "copyFormatting": "none",
   "focusFollowMouse": false,
   "showTabsInTitlebar": true,
   "alwaysShowTabs": false,
-  "useAcrylicInTabRow": true,
+  "useAcrylicInTabRow": false,
   "profiles": {
     "defaults": {
       "font": {
@@ -18,10 +16,10 @@
         "size": 10.5,
         "weight": "normal"
       },
-      "colorScheme": "Rose Pine",
-      "useAcrylic": true,
+      "colorScheme": "Rose Pine Moon",
+      "useAcrylic": false,
       "opacity": 88,
-      "padding": "10",
+      "padding": "12, 10, 12, 6",
       "scrollbarState": "hidden",
       "historySize": 20000,
       "antialiasingMode": "grayscale",
@@ -58,26 +56,26 @@
   },
   "schemes": [
     {
-      "name": "Rose Pine",
-      "background": "#191724",
+      "name": "Rose Pine Moon",
+      "background": "#232136",
       "foreground": "#E0DEF4",
-      "cursorColor": "#EBBCBA",
-      "selectionBackground": "#403D52",
-      "black": "#26233A",
+      "cursorColor": "#EA9A97",
+      "selectionBackground": "#44415A",
+      "black": "#393552",
       "red": "#EB6F92",
-      "green": "#31748F",
+      "green": "#3E8FB0",
       "yellow": "#F6C177",
       "blue": "#9CCFD8",
       "purple": "#C4A7E7",
-      "cyan": "#EBBCBA",
+      "cyan": "#EA9A97",
       "white": "#E0DEF4",
       "brightBlack": "#6E6A86",
       "brightRed": "#EB6F92",
-      "brightGreen": "#31748F",
+      "brightGreen": "#3E8FB0",
       "brightYellow": "#F6C177",
       "brightBlue": "#9CCFD8",
       "brightPurple": "#C4A7E7",
-      "brightCyan": "#EBBCBA",
+      "brightCyan": "#EA9A97",
       "brightWhite": "#E0DEF4"
     }
   ],
@@ -98,6 +96,14 @@
       "keys": "ctrl+shift+f"
     },
     {
+      "command": "toggleFocusMode",
+      "keys": "ctrl+shift+period"
+    },
+    {
+      "command": "toggleFullscreen",
+      "keys": "f11"
+    },
+    {
       "command": {
         "action": "adjustFontSize",
         "delta": 1
@@ -116,5 +122,7 @@
       "keys": "ctrl+0"
     }
   ],
-  "keybindings": []
+  "keybindings": [],
+  "launchMode": "maximizedFocus",
+  "disableAnimations": false
 }

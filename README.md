@@ -55,11 +55,18 @@ cd agent-console
 powershell -ExecutionPolicy Bypass -File .\bootstrap.ps1
 ```
 
-Then install the file viewer once:
+Then install the file viewer once, and verify:
 
 ```powershell
 .\bin\herdr.exe plugin install smarzban/herdr-file-viewer --yes
+powershell -ExecutionPolicy Bypass -File .\Test-Bundle.ps1
 ```
+
+`Test-Bundle.ps1` runs 38 checks across three passes: files and configuration, a
+live herdr session it starts and tears down, and a confirmation that nothing
+outside this folder was touched. Every failure prints what was expected, what was
+found, and how to fix it. If you need to ask someone for help, paste its whole
+output.
 
 ## Use
 
@@ -84,6 +91,9 @@ that impossible.
 
 Each mode is also a Windows Terminal profile, so `ctrl+shift+t` inside a running
 window lets you open the other one in a new tab.
+
+Full manual, including every setting you can change and how:
+**[docs/USAGE.md](docs/USAGE.md)**.
 
 ### Keys
 
@@ -158,6 +168,7 @@ Explicitly **not** touched:
 agent-console/
   bootstrap.ps1              build bin\ from the manifest
   Start-AgentConsole.ps1     the launcher, personal and -Clean modes
+  Test-Bundle.ps1            38 checks: static, live, and global footprint
   Uninstall.ps1              reverse the two global side effects
   config/                    cross platform: works as-is on macOS and Linux
     herdr/config.toml        theme, sidebar, keybindings, worktrees
@@ -167,6 +178,7 @@ agent-console/
     pane-init.ps1            what each pane runs, and where -Clean is applied
     agent-shell.cmd          pane shell that re-adds bin\ to PATH
     Build-HerdrConfig.ps1    renders the __BUNDLE__ token at launch
+  docs/USAGE.md              the user manual: every key, every setting
   docs/PLAN.md               the research behind every choice
   bin/                       gitignored, rebuilt by bootstrap.ps1
 ```
@@ -208,6 +220,9 @@ Windows support in herdr became generally available in 0.8.2 on 2026-08-19.
 It is young. Expect rougher edges than on macOS.
 
 ## Troubleshooting
+
+Run `.\Test-Bundle.ps1` first. It names the problem and the fix for most of them.
+[docs/USAGE.md](docs/USAGE.md#when-something-breaks) has the full table.
 
 A pane opens at a bare prompt instead of the console: read `bin\pane-init.log`.
 It records the bundle root, whether `herdr.exe`, `conpty\conpty.dll` and the

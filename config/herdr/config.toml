@@ -23,11 +23,26 @@ new_cwd = "follow"
 [theme]
 name = "rose-pine"
 
-# Open issue herdrdev/herdr#2692: sidebar labels can render nearly invisible on
-# dark themes. These two overrides pin them to readable values.
+# Rose Pine Moon, approximated on top of the built-in rose-pine base.
+#
+# herdr ships rose-pine and rose-pine-dawn but not the moon variant, so the
+# moon tones come from these overrides. Run `herdr config check` after editing:
+# an unknown theme name is silently replaced by catppuccin.
+#
+# panel_bg = "reset" is the important one. It stops herdr painting an opaque
+# background behind the panes, so Windows Terminal's acrylic shows through and
+# you get the layered look instead of a flat rectangle.
+#
+# These also work around open issue herdrdev/herdr#2692, where sidebar labels
+# render nearly invisible on dark themes.
 [theme.custom]
-sidebar_bg = "#191724"
-accent = "#c4a7e7"
+panel_bg      = "reset"
+sidebar_bg    = "#232136"
+active_row_bg = "#2a273f"
+selection_bg  = "#44415a"
+accent        = "#c4a7e7"
+red           = "#eb6f92"
+green         = "#3e8fb0"
 
 # Sidebar: agent state first, then where it is running.
 [ui.sidebar.agents]

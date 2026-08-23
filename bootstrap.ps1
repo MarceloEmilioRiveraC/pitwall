@@ -117,6 +117,39 @@ New-Item -ItemType Directory -Force -Path $Bin, $Cache | Out-Null
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
 # ---------------------------------------------------------------------------
+# 0b. Release the bundle's own files
+#
+# Re-running with -Force while the console is open fails on
+# bin\conpty\conpty.dll, which the running herdr server holds open. Updating a
+# tool while you are using it is the normal case, so stop this bundle's own
+# processes rather than making the user work it out from a Copy-Item error.
+#
+# Only processes running from THIS folder are touched. A herdr session started
+# from somewhere else, and any other Windows Terminal, are left alone.
+# herdr persists its session, so reopening the console restores the workspaces.
+# ---------------------------------------------------------------------------
+$herdrExe = Join-Path $Bin 'herdr.exe'
+if (Test-Path $herdrExe) {
+    $running = @(Get-Process -Name 'herdr', 'WindowsTerminal' -ErrorAction SilentlyContinue |
+                 Where-Object { $_.Path -and $_.Path.StartsWith($Root, 'OrdinalIgnoreCase') })
+
+    if ($running.Count -gt 0) {
+        Write-Step 'Closing this bundle before rebuilding it'
+        try { & $herdrExe session stop clean 2>$null | Out-Null } catch { }
+        try { & $herdrExe server stop        2>$null | Out-Null } catch { }
+        Start-Sleep -Milliseconds 1200
+
+        $stillRunning = @(Get-Process -Name 'herdr', 'WindowsTerminal' -ErrorAction SilentlyContinue |
+                          Where-Object { $_.Path -and $_.Path.StartsWith($Root, 'OrdinalIgnoreCase') })
+        foreach ($proc in $stillRunning) {
+            try { $proc | Stop-Process -Force -ErrorAction Stop } catch { }
+        }
+        Start-Sleep -Milliseconds 800
+        Write-Ok "$($running.Count) process(es) from this bundle stopped"
+    }
+}
+
+# ---------------------------------------------------------------------------
 # 1. Download
 # ---------------------------------------------------------------------------
 Write-Step 'Downloading components'
