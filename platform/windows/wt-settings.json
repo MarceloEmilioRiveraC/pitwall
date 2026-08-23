@@ -1,0 +1,111 @@
+{
+  "$help": "https://aka.ms/terminal-documentation",
+  "$schema": "https://aka.ms/terminal-profiles-schema",
+  "_comment": "Portable Windows Terminal settings for the agent console. bootstrap.ps1 substitutes __BUNDLE__ and copies this next to WindowsTerminal.exe as settings/settings.json. Your system-wide Windows Terminal never reads this file.",
+  "defaultProfile": "{6f1de2a1-0000-4a10-9b0e-a9c0de17c001}",
+  "initialCols": 200,
+  "initialRows": 50,
+  "copyOnSelect": false,
+  "copyFormatting": "none",
+  "focusFollowMouse": false,
+  "showTabsInTitlebar": true,
+  "alwaysShowTabs": false,
+  "useAcrylicInTabRow": true,
+  "profiles": {
+    "defaults": {
+      "font": {
+        "face": "JetBrainsMono Nerd Font",
+        "size": 10.5,
+        "weight": "normal"
+      },
+      "colorScheme": "Rose Pine",
+      "useAcrylic": true,
+      "opacity": 88,
+      "padding": "10",
+      "scrollbarState": "hidden",
+      "historySize": 20000,
+      "antialiasingMode": "grayscale",
+      "closeOnExit": "graceful"
+    },
+    "list": [
+      {
+        "guid": "{6f1de2a1-0000-4a10-9b0e-a9c0de17c001}",
+        "name": "Agent Console",
+        "commandline": "pwsh.exe -NoLogo -NoExit -ExecutionPolicy Bypass -File \"__BUNDLE__\\platform\\windows\\pane-init.ps1\"",
+        "startingDirectory": "C:/dev",
+        "icon": "\ud83d\udc0e",
+        "tabTitle": "agent-console",
+        "suppressApplicationTitle": false
+      },
+      {
+        "guid": "{6f1de2a1-0000-4a10-9b0e-a9c0de17c002}",
+        "name": "pwsh (bundle PATH)",
+        "commandline": "pwsh.exe -NoLogo -NoExit -ExecutionPolicy Bypass -File \"__BUNDLE__\\platform\\windows\\pane-init.ps1\" -NoHerdr",
+        "startingDirectory": "C:/dev",
+        "icon": "\ud83d\udd27",
+        "_comment": "Escape hatch. Same bundle PATH, no herdr. Use it to debug."
+      }
+    ]
+  },
+  "schemes": [
+    {
+      "name": "Rose Pine",
+      "background": "#191724",
+      "foreground": "#E0DEF4",
+      "cursorColor": "#EBBCBA",
+      "selectionBackground": "#403D52",
+      "black": "#26233A",
+      "red": "#EB6F92",
+      "green": "#31748F",
+      "yellow": "#F6C177",
+      "blue": "#9CCFD8",
+      "purple": "#C4A7E7",
+      "cyan": "#EBBCBA",
+      "white": "#E0DEF4",
+      "brightBlack": "#6E6A86",
+      "brightRed": "#EB6F92",
+      "brightGreen": "#31748F",
+      "brightYellow": "#F6C177",
+      "brightBlue": "#9CCFD8",
+      "brightPurple": "#C4A7E7",
+      "brightCyan": "#EBBCBA",
+      "brightWhite": "#E0DEF4"
+    }
+  ],
+  "actions": [
+    {
+      "command": "paste",
+      "keys": "ctrl+shift+v"
+    },
+    {
+      "command": {
+        "action": "copy",
+        "singleLine": false
+      },
+      "keys": "ctrl+shift+c"
+    },
+    {
+      "command": "find",
+      "keys": "ctrl+shift+f"
+    },
+    {
+      "command": {
+        "action": "adjustFontSize",
+        "delta": 1
+      },
+      "keys": "ctrl+plus"
+    },
+    {
+      "command": {
+        "action": "adjustFontSize",
+        "delta": -1
+      },
+      "keys": "ctrl+minus"
+    },
+    {
+      "command": "resetFontSize",
+      "keys": "ctrl+0"
+    }
+  ],
+  "keybindings": []
+}

@@ -1,0 +1,12 @@
+# Deterministic line endings, so a clone on another machine is byte-identical.
+* text=auto eol=lf
+
+# PowerShell is happier with CRLF on Windows and this bundle is Windows-first.
+*.ps1 text eol=crlf
+
+# The .portable marker and downloaded binaries never reach the repo, but be
+# explicit in case someone force-adds one.
+*.exe binary
+*.dll binary
+*.ttf binary
+*.zip binary

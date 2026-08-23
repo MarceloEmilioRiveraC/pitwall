@@ -1,0 +1,221 @@
+# agent-console
+
+A portable, self-contained terminal control room for coding agents on Windows.
+
+One folder. You run one script and get a terminal with an agent sidebar on the
+left, your agent in the middle, and a git-aware file viewer on the right that
+shows the diff of whatever the agent just touched.
+
+It installs nothing into your system terminal and nothing into your normal
+Claude Code setup. Delete the folder and it is gone.
+
+```
++------------------+--------------------------------+---------------------------+
+|  spaces          |                                |  tree            diff     |
+|   * agent-console|   claude / codex / any agent   |   > src/         @@ -1,4  |
+|                  |                                |   M app.ts       - old    |
+|  agents          |                                |   A util.ts      + new    |
+|   * claude  idle |                                |                           |
++------------------+--------------------------------+---------------------------+
+   herdr sidebar          your agent                    herdr-file-viewer
+```
+
+## Why this exists
+
+Two reasons, and the second is the one that shaped the design.
+
+1. **Seeing the work.** An agent writing code is only useful if reviewing it is
+   fast. A permanent right-hand panel that jumps between changed files turns
+   review from a context switch into a glance.
+
+2. **Keeping it separate.** Not every project is one where you want a
+   customised terminal on screen. This bundle never becomes your default
+   terminal, never registers a context menu entry, and never edits the
+   Windows Terminal you already have. You keep the stock terminal for shared
+   screens and client work, and launch this one when you want it.
+
+## What you need
+
+| Requirement | Notes |
+|---|---|
+| Windows 10 2004 or newer | Portable mode needs it. Windows 11 is fine |
+| x64 | The manifest pins x64 builds. Edit `bootstrap.ps1` for arm64 |
+| PowerShell 7 | Optional but recommended. `winget install Microsoft.PowerShell` |
+| Visual C++ 2015+ runtime | Usually already present. `winget install Microsoft.VCRedist.2015+.x64` |
+| An agent CLI | Claude Code, Codex, opencode, whatever you already use |
+| No admin rights | Nothing here needs elevation |
+
+About 190 MB of downloads, roughly 100 MB on disk once built.
+
+## Install
+
+```powershell
+git clone <this-repo> agent-console
+cd agent-console
+powershell -ExecutionPolicy Bypass -File .\bootstrap.ps1
+```
+
+Then install the file viewer once:
+
+```powershell
+.\bin\herdr.exe plugin install smarzban/herdr-file-viewer --yes
+```
+
+## Use
+
+```powershell
+.\Start-AgentConsole.ps1
+```
+
+Two modes:
+
+| Command | Claude Code reads | Use it for |
+|---|---|---|
+| `.\Start-AgentConsole.ps1` | your normal `~/.claude`: your plugins, your CLAUDE.md, your login | your own projects |
+| `.\Start-AgentConsole.ps1 -Clean` | `.\config\claude`: no personal plugins, no personal CLAUDE.md, its own login | client work, shared screens |
+
+`-WorkDir <path>` opens somewhere other than the parent folder.
+
+### Keys
+
+The prefix is `ctrl+b`. Press `ctrl+b ?` for the full list.
+
+| Key | Action |
+|---|---|
+| `ctrl+b f` | File viewer in a split. This is the right-hand panel |
+| `ctrl+b shift+f` | File viewer in its own tab |
+| `ctrl+b alt+g` | lazygit in a popup |
+| `ctrl+b c` | New tab |
+| `ctrl+b v` / `ctrl+b -` | Split right / split down |
+| `ctrl+b h j k l` | Move between panes |
+| `ctrl+b z` | Zoom the focused pane |
+| `ctrl+b w` | Workspace switcher |
+| `ctrl+b b` | Toggle the sidebar |
+
+Inside the file viewer:
+
+| Key | Action |
+|---|---|
+| `]` / `[` | Next / previous changed file |
+| `v` | Cycle diff, rendered markdown, syntax highlighted |
+| `b` | Toggle diff baseline between merge-base and HEAD |
+| `f` | Fuzzy find |
+| `p` | Pin a file and keep browsing |
+| `a` / `A` | Annotate a range to hand to the agent |
+| `L` | Copy a `path:line` reference |
+| `e` | Open in your editor |
+| `?` | Help |
+
+## What it touches outside its own folder
+
+Two things. Both are per user, neither needs admin, and `Uninstall.ps1` reverses
+both.
+
+| What | Where | Why it cannot live in the folder |
+|---|---|---|
+| JetBrainsMono Nerd Font | `%LOCALAPPDATA%\Microsoft\Windows\Fonts` and `HKCU\...\Fonts` | Windows Terminal loads fonts by name from the font registry, not from a path |
+| herdr state | `%APPDATA%\herdr` (plugins, logs, socket, session) | herdr offers no environment variable to relocate it. `HERDR_CONFIG_PATH` moves `config.toml` and nothing else |
+
+Explicitly **not** touched:
+
+- Your installed Windows Terminal, stable or preview. This bundle ships its own
+  copy in portable mode, which Microsoft documents as not interfering with other
+  installed distributions.
+- Your `~/.claude`, unless you asked for `-Clean`, in which case it is not read
+  at all.
+- Your `PATH`, your registry beyond the font, and your default terminal setting.
+
+```powershell
+.\Uninstall.ps1                                     # font only
+.\Uninstall.ps1 -RemoveHerdrData -RemoveBinaries    # everything
+```
+
+## What is inside
+
+| Component | Version | Role |
+|---|---|---|
+| [herdr](https://herdr.dev) | 0.8.2 | Agent-aware multiplexer. The sidebar, panes and agent state |
+| [Windows Terminal](https://github.com/microsoft/terminal) | 1.25.1912.0 Preview | The window. Preview because the Kitty keyboard protocol landed in 1.25 and Shift+Enter depends on it |
+| [herdr-file-viewer](https://github.com/smarzban/herdr-file-viewer) | 1.16.0 | The right-hand panel |
+| [lazygit](https://github.com/jesseduffield/lazygit) | 0.64.1 | Fallback git panel |
+| [delta](https://github.com/dandavison/delta) | 0.19.2 | Diff rendering |
+| [bat](https://github.com/sharkdp/bat) | 0.26.1 | Syntax highlighting |
+| [glow](https://github.com/charmbracelet/glow) | 3.0.0 | Markdown rendering |
+| [JetBrainsMono Nerd Font](https://github.com/ryanoasis/nerd-fonts) | 3.5.1 | Icons in the sidebar |
+
+## Layout
+
+```
+agent-console/
+  bootstrap.ps1              build bin\ from the manifest
+  Start-AgentConsole.ps1     the launcher, personal and -Clean modes
+  Uninstall.ps1              reverse the two global side effects
+  config/                    cross platform: works as-is on macOS and Linux
+    herdr/config.toml        theme, sidebar, keybindings, worktrees
+    claude/                  the -Clean profile lands here, gitignored
+  platform/windows/
+    wt-settings.json         Windows Terminal settings, __BUNDLE__ token
+    pane-init.ps1            what each pane runs
+  docs/PLAN.md               the research behind every choice
+  bin/                       gitignored, rebuilt by bootstrap.ps1
+```
+
+`config/` is deliberately separate from `platform/`. A macOS port replaces
+`platform/windows/` and reuses `config/` unchanged, apart from two action ids
+noted below.
+
+## Does this work on macOS?
+
+Partly, and the split is clean.
+
+| Layer | macOS | Notes |
+|---|---|---|
+| herdr | Yes, better than on Windows | `brew install herdr`. macOS is its primary platform |
+| herdr-file-viewer | Yes | The non-suffixed actions are the macOS ones |
+| lazygit, delta, bat, glow | Yes | All in Homebrew |
+| `config/herdr/config.toml` | Almost | Drop the `-windows` suffix from the two file viewer action ids, and change the `worktrees` path |
+| Nerd Font | Yes | `brew install --cask font-jetbrains-mono-nerd-font` |
+| Windows Terminal portable | **No** | Windows only. Use WezTerm, Ghostty, iTerm2 or Alacritty |
+| The three `.ps1` scripts | **No** | They need shell equivalents |
+
+So the agent layer and the review layer port cleanly. The window and the
+scripts do not. A macOS port is a new `platform/macos/` folder with a shell
+launcher and a Brewfile, not a rewrite.
+
+## Known issues
+
+Open upstream, current as of 2026-08-23:
+
+| Issue | Effect here |
+|---|---|
+| [herdr#2692](https://github.com/herdrdev/herdr/issues/2692) | Sidebar labels can be near-invisible on dark themes. Worked around in `config.toml` under `[theme.custom]` |
+| [herdr#3129](https://github.com/herdrdev/herdr/issues/3129) | The 0.8.2 archive needs `VCRUNTIME140.dll`. `bootstrap.ps1` checks for it and tells you how to install it |
+| [herdr#1054](https://github.com/herdrdev/herdr/issues/1054) | Shell config can be ignored, opening PowerShell 5.1 in panes |
+| [herdr#3024](https://github.com/herdrdev/herdr/issues/3024) | Plugin pane paths on Windows. Not observed here, but `ctrl+b alt+g` is the fallback if the viewer ever fails to open |
+
+Windows support in herdr became generally available in 0.8.2 on 2026-08-19.
+It is young. Expect rougher edges than on macOS.
+
+## Troubleshooting
+
+A pane opens at a bare prompt instead of the console: read `bin\pane-init.log`.
+It records whether `herdr.exe`, `conpty\conpty.dll` and the config were found.
+
+Icons render as empty boxes: the font did not install. Re-run
+`bootstrap.ps1 -Force` and check the count it reports.
+
+herdr starts and exits instantly: `conpty\` is missing next to `herdr.exe`.
+herdr ships its own ConPTY runtime and will not run without it. Run
+`bootstrap.ps1 -Force`.
+
+## Licence
+
+The scripts and configuration here are MIT. Every bundled tool keeps its own
+licence; herdr is Apache 2.0.
+
+## Credits
+
+The workflow this imitates is [Kun Chen's](https://github.com/kunchenguid/dotfiles)
+agentic engineering setup. His runs on macOS with WezTerm, Neovim and Neogit.
+This is the Windows reading of the same idea, with the editor swapped for a
+read-only file viewer.

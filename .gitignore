@@ -1,0 +1,13 @@
+# Downloaded binaries. Recreate with bootstrap.ps1
+bin/
+
+# Isolated Claude Code profile: local state and credentials, never commit
+config/claude/*
+!config/claude/.gitkeep
+
+# herdr runtime state
+config/herdr/*.log
+config/herdr/plugins/
+
+# Windows Terminal portable runtime state
+platform/windows/settings-runtime/

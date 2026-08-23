@@ -1,0 +1,79 @@
+# herdr config for the portable agent console.
+# Loaded via HERDR_CONFIG_PATH, set by Start-AgentConsole.ps1.
+# Your global %APPDATA%\herdr config is never read or written.
+#
+# Only keys verified against https://herdr.dev/docs/configuration/ are set here.
+# To see everything available: herdr --default-config
+
+[terminal]
+default_shell = "pwsh"
+shell_mode = "auto"
+new_cwd = "follow"
+
+[theme]
+name = "rose-pine"
+
+# Open issue herdrdev/herdr#2692: sidebar labels can render nearly invisible on
+# dark themes. These two overrides pin them to readable values.
+[theme.custom]
+sidebar_bg = "#191724"
+accent = "#c4a7e7"
+
+# Sidebar: agent state first, then where it is running.
+[ui.sidebar.agents]
+row_gap = 0
+rows = [
+  ["state_icon", "workspace", "tab"],
+  ["agent"],
+]
+
+# Spaces carry the git context, which is the point of the right-hand panel.
+[ui.sidebar.spaces]
+rows = [
+  ["state_icon", "workspace"],
+  ["branch", "git_status"],
+]
+
+[ui]
+tab_bar_position = "bottom"
+
+# Notifications in-app rather than through the OS, so a background agent
+# finishing does not steal focus from whatever you are reading.
+[ui.toast]
+delivery = "herdr"
+delay_seconds = 1
+
+[worktrees]
+directory = "C:/dev/.worktrees"
+
+[session]
+resume_agents_on_restore = true
+
+# ---------------------------------------------------------------------------
+# The right-hand panel. This is the whole point of the setup.
+# prefix is ctrl+b by default.
+# ---------------------------------------------------------------------------
+
+# Tree on the left, diff/markdown/code on the right, in a split.
+[[keys.command]]
+key = "prefix+f"
+type = "plugin_action"
+command = "herdr-file-viewer.open-file-viewer-windows"
+description = "file viewer (split)"
+
+# Same thing, full tab.
+[[keys.command]]
+key = "prefix+shift+f"
+type = "plugin_action"
+command = "herdr-file-viewer.open-file-viewer-tab-windows"
+description = "file viewer (tab)"
+
+# Fallback panel: if the file viewer plugin misbehaves on Windows, this always
+# works. See docs/PLAN.md, open issue herdrdev/herdr#3024.
+[[keys.command]]
+key = "prefix+alt+g"
+type = "popup"
+command = "lazygit"
+description = "lazygit"
+width = "90%"
+height = "90%"
