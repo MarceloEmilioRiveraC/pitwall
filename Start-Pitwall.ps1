@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-  Launches the portable agent console.
+  Launches the portable pitwall.
 
 .DESCRIPTION
   Sets three environment variables for this launch only, then starts the
@@ -17,13 +17,13 @@
       anything you screen-share.
 
 .EXAMPLE
-  .\Start-AgentConsole.ps1
+  .\Start-Pitwall.ps1
 
 .EXAMPLE
-  .\Start-AgentConsole.ps1 -Clean
+  .\Start-Pitwall.ps1 -Clean
 
 .EXAMPLE
-  .\Start-AgentConsole.ps1 -WorkDir C:\dev\Exposoft
+  .\Start-Pitwall.ps1 -WorkDir C:\dev\Exposoft
 #>
 [CmdletBinding()]
 param(
@@ -90,12 +90,12 @@ $env:HERDR_CONFIG_PATH = $renderedConfig
 # personal profile. For a compliance feature that failure mode is unacceptable,
 # so the flag travels on the profile's command line where it cannot be lost.
 if ($Clean) {
-    $profileName = 'Agent Console (Clean)'
+    $profileName = 'pitwall (clean)'
     $mode        = 'clean (isolated Claude profile, own herdr session, separate login)'
     New-Item -ItemType Directory -Force -Path (Join-Path $Root 'config\claude') | Out-Null
 }
 else {
-    $profileName = 'Agent Console'
+    $profileName = 'pitwall'
     $mode        = 'personal (your ~/.claude)'
 }
 
@@ -118,7 +118,7 @@ if (-not $profileGuid) {
 # Launch
 # ---------------------------------------------------------------------------
 Write-Host ''
-Write-Host '  agent console' -ForegroundColor Cyan
+Write-Host '  pitwall' -ForegroundColor Cyan
 Write-Host "    mode      $mode"
 Write-Host "    profile   $profileName  $profileGuid"
 Write-Host "    workdir   $WorkDir"

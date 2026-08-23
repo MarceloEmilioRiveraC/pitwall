@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-  Builds the portable agent console into .\bin. Downloads every binary, sets up
+  Builds the portable pitwall into .\bin. Downloads every binary, sets up
   Windows Terminal in portable mode, and installs the Nerd Font for the current
   user only.
 
@@ -272,7 +272,7 @@ New-Item -ItemType Directory -Force -Path $wtSettingsDir | Out-Null
 # The versioned settings file carries a __BUNDLE__ token so it stays
 # machine-independent. The runtime copy gets absolute paths, which is what lets
 # the console work when someone launches WindowsTerminal.exe directly instead of
-# going through Start-AgentConsole.ps1.
+# going through Start-Pitwall.ps1.
 $settingsTemplate = Get-Content (Join-Path $Root 'platform\windows\wt-settings.json') -Raw
 $settingsRendered = $settingsTemplate.Replace('__BUNDLE__', $Root.Replace('\', '\\'))
 
@@ -283,6 +283,19 @@ $noBom = New-Object System.Text.UTF8Encoding($false)
                                $settingsRendered, $noBom)
 
 Write-Ok "settings.json installed, bundle root resolved to $Root"
+
+# ---------------------------------------------------------------------------
+# 3bis. herdr configuration
+#
+# Start-Pitwall.ps1 and pane-init.ps1 render this at every launch, so strictly
+# it is not needed here. Doing it anyway leaves bin\ complete right after a
+# bootstrap, and stops a stale copy surviving a move: renaming the bundle folder
+# used to leave the old absolute path in bin\herdr-config.toml until the next
+# launch overwrote it.
+# ---------------------------------------------------------------------------
+Write-Step 'Rendering the herdr config'
+$renderedHerdr = & (Join-Path $Root 'platform\windows\Build-HerdrConfig.ps1') -BundleRoot $Root
+Write-Ok "herdr config -> $renderedHerdr"
 
 # ---------------------------------------------------------------------------
 # 3c. Editor configuration
@@ -403,6 +416,6 @@ if (Test-Path $wtDir) {
 }
 Write-Host ''
 Write-Host '  Next:' -ForegroundColor Cyan
-Write-Host '    .\Start-AgentConsole.ps1           personal profile (your ~/.claude loads)'
-Write-Host '    .\Start-AgentConsole.ps1 -Clean    isolated profile (nothing personal loads)'
+Write-Host '    .\Start-Pitwall.ps1           personal profile (your ~/.claude loads)'
+Write-Host '    .\Start-Pitwall.ps1 -Clean    isolated profile (nothing personal loads)'
 Write-Host ''

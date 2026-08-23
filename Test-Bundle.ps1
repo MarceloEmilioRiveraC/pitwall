@@ -85,7 +85,7 @@ function Test-Item {
 function Write-Section { param($Title) Write-Host ''; Write-Host "== $Title" -ForegroundColor Cyan }
 
 Write-Host ''
-Write-Host 'agent-console self test' -ForegroundColor Cyan
+Write-Host 'pitwall self test' -ForegroundColor Cyan
 Write-Host "  bundle: $Root"
 
 # ===========================================================================
@@ -147,7 +147,7 @@ Test-Item 'runtime settings.json has no byte order mark' {
 Test-Item 'both console profiles are defined' {
     $p = Join-Path $Bin 'WindowsTerminal\settings\settings.json'
     $names = ((Get-Content $p -Raw | ConvertFrom-Json).profiles.list).name
-    $want = @('Agent Console', 'Agent Console (Clean)')
+    $want = @('pitwall', 'pitwall (clean)')
     $missing = $want | Where-Object { $_ -notin $names }
     @((-not $missing), "found: $($names -join ', ')")
 } -Fix 'bootstrap.ps1 -Force'
@@ -233,7 +233,7 @@ Test-Item 'file viewer exposes its Windows actions' {
     @(($out -match 'herdr-file-viewer'), 'action ids are checked live below')
 } -WarnOnly -Fix '.\bin\herdr.exe plugin install smarzban/herdr-file-viewer --yes'
 
-foreach ($script in 'bootstrap.ps1', 'Start-AgentConsole.ps1', 'Uninstall.ps1',
+foreach ($script in 'bootstrap.ps1', 'Start-Pitwall.ps1', 'Uninstall.ps1',
                     'Test-Bundle.ps1', 'platform\windows\pane-init.ps1',
                     'platform\windows\Build-HerdrConfig.ps1') {
     Test-Item "$script parses" ([scriptblock]::Create(@"
@@ -254,7 +254,7 @@ else {
     Write-Section 'LIVE: starting a throwaway herdr session'
 
     $herdr    = Join-Path $Bin 'herdr.exe'
-    $testName = 'agentconsole-selftest'
+    $testName = 'pitwall-selftest'
     $env:HERDR_CONFIG_PATH = Join-Path $Bin 'herdr-config.toml'
     $env:PATH = "$Bin;$env:PATH"
 
@@ -383,6 +383,6 @@ if ($script:Warn -gt 0) {
 }
 Write-Host ''
 Write-Host '  Ready. Start it with:' -ForegroundColor Cyan
-Write-Host '    .\Start-AgentConsole.ps1'
+Write-Host '    .\Start-Pitwall.ps1'
 Write-Host ''
 exit 0

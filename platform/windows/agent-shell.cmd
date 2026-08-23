@@ -1,5 +1,5 @@
 @echo off
-rem Pane shell for the agent console.
+rem Pane shell for the pitwall.
 rem
 rem herdr rebuilds PATH for the panes it spawns: other environment variables
 rem pass through (HERDR_CONFIG_PATH arrives intact) but PATH comes back as the

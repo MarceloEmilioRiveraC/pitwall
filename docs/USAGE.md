@@ -1,6 +1,6 @@
 # User manual
 
-Everything you need to run, drive and reshape the agent console. The
+Everything you need to run, drive and reshape the pitwall. The
 [README](../README.md) is the sales pitch and the install; this is the manual.
 
 If you only read one section, read [The daily loop](#the-daily-loop).
@@ -37,7 +37,7 @@ If you only read one section, read [The daily loop](#the-daily-loop).
 powershell -ExecutionPolicy Bypass -File .\bootstrap.ps1
 .\bin\herdr.exe plugin install smarzban/herdr-file-viewer --yes
 powershell -ExecutionPolicy Bypass -File .\Test-Bundle.ps1
-.\Start-AgentConsole.ps1
+.\Start-Pitwall.ps1
 ```
 
 `Test-Bundle.ps1` runs 40 checks: files, versions, config validity, a live
@@ -54,7 +54,7 @@ Make a shortcut so you are not typing paths. Right-click the desktop, New,
 Shortcut, and use:
 
 ```
-powershell -ExecutionPolicy Bypass -WindowStyle Hidden -File "C:\dev\agent-console\Start-AgentConsole.ps1"
+powershell -ExecutionPolicy Bypass -WindowStyle Hidden -File "C:\dev\pitwall\Start-Pitwall.ps1"
 ```
 
 ---
@@ -82,7 +82,7 @@ Three regions on screen:
 
 ## The daily loop
 
-1. `.\Start-AgentConsole.ps1 -WorkDir C:\dev\my-project`
+1. `.\Start-Pitwall.ps1 -WorkDir C:\dev\my-project`
 2. Type `claude` in the centre pane. The sidebar picks it up within a second or
    two and starts tracking its state.
 3. Give it work.
@@ -219,8 +219,8 @@ own tabs.
 
 | Command | Claude Code reads | herdr session |
 |---|---|---|
-| `.\Start-AgentConsole.ps1` | your `~/.claude`: your plugins, CLAUDE.md, statusline, login | `default` |
-| `.\Start-AgentConsole.ps1 -Clean` | `config/claude/` inside the bundle: nothing personal, its own login | `clean` |
+| `.\Start-Pitwall.ps1` | your `~/.claude`: your plugins, CLAUDE.md, statusline, login | `default` |
+| `.\Start-Pitwall.ps1 -Clean` | `config/claude/` inside the bundle: nothing personal, its own login | `clean` |
 
 Use `-Clean` for client work and anything you screen-share. The first time you
 use it, Claude Code will ask you to log in, because credentials live in the
@@ -236,8 +236,8 @@ Both are also Windows Terminal profiles. Press `ctrl+shift+.` to bring back the
 tab bar, then use the `+` dropdown to open the other mode in a new tab.
 
 ```powershell
-.\Start-AgentConsole.ps1 -WorkDir C:\dev\Exposoft          # start somewhere specific
-.\Start-AgentConsole.ps1 -Clean -WorkDir C:\work\client
+.\Start-Pitwall.ps1 -WorkDir C:\dev\Exposoft          # start somewhere specific
+.\Start-Pitwall.ps1 -Clean -WorkDir C:\work\client
 ```
 
 ---
@@ -673,8 +673,8 @@ Everything the UI does is on the CLI, which is how the bundle's own tests work.
 Set the config path first so you are talking to the bundle's session:
 
 ```powershell
-$env:PATH = "C:\dev\agent-console\bin;$env:PATH"
-$env:HERDR_CONFIG_PATH = "C:\dev\agent-console\bin\herdr-config.toml"
+$env:PATH = "C:\dev\pitwall\bin;$env:PATH"
+$env:HERDR_CONFIG_PATH = "C:\dev\pitwall\bin\herdr-config.toml"
 ```
 
 ```powershell

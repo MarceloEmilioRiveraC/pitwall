@@ -1,11 +1,11 @@
 <#
 .SYNOPSIS
-  What each Agent Console pane runs. Configures its own environment, then
+  What each pitwall pane runs. Configures its own environment, then
   starts herdr.
 
 .DESCRIPTION
   This script deliberately does not assume it was launched by
-  Start-AgentConsole.ps1. It derives the bundle root from its own location and
+  Start-Pitwall.ps1. It derives the bundle root from its own location and
   sets everything itself, so double-clicking bin\WindowsTerminal\WindowsTerminal.exe
   gives you the same working console as the launcher does.
 
@@ -25,7 +25,7 @@ param(
     # This is a parameter and not an inherited environment variable on purpose.
     # Windows Terminal starts a profile's command line with a fresh environment
     # rather than the one held by whatever launched WindowsTerminal.exe, so
-    # nothing exported by Start-AgentConsole.ps1 survives the hop. Verified:
+    # nothing exported by Start-Pitwall.ps1 survives the hop. Verified:
     # CLAUDE_CONFIG_DIR set by the launcher arrived here unset.
     #
     # Each mode therefore gets its own Windows Terminal profile, and the profile

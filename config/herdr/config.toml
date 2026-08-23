@@ -1,5 +1,5 @@
-# herdr config for the portable agent console.
-# Loaded via HERDR_CONFIG_PATH, set by Start-AgentConsole.ps1.
+# herdr config for the portable pitwall.
+# Loaded via HERDR_CONFIG_PATH, set by Start-Pitwall.ps1.
 # Your global %APPDATA%\herdr config is never read or written.
 #
 # Only keys verified against https://herdr.dev/docs/configuration/ are set here.

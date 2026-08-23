@@ -1,6 +1,6 @@
 # Plan and decision record
 
-Everything behind `agent-console`: what was researched, what was chosen, how
+Everything behind `pitwall`: what was researched, what was chosen, how
 each claim was checked, and what is still unproven.
 
 Research and build date: **2026-08-23**. Anything version-dependent below has a

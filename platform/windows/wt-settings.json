@@ -1,7 +1,7 @@
 {
   "$help": "https://aka.ms/terminal-documentation",
   "$schema": "https://aka.ms/terminal-profiles-schema",
-  "_comment": "Portable Windows Terminal settings for the agent console. bootstrap.ps1 substitutes __BUNDLE__ and copies this next to WindowsTerminal.exe as settings/settings.json. Your system-wide Windows Terminal never reads this file. useAcrylic true blurs whatever is behind the window: it keeps the layered look without letting the text of a bright window behind bleed through the text in front. Set useAcrylic false for the sharp wallpaper look, which only reads well when a wallpaper is what is actually behind. See docs/USAGE.md.",
+  "_comment": "Portable Windows Terminal settings for the pitwall. bootstrap.ps1 substitutes __BUNDLE__ and copies this next to WindowsTerminal.exe as settings/settings.json. Your system-wide Windows Terminal never reads this file. useAcrylic true blurs whatever is behind the window: it keeps the layered look without letting the text of a bright window behind bleed through the text in front. Set useAcrylic false for the sharp wallpaper look, which only reads well when a wallpaper is what is actually behind. See docs/USAGE.md.",
   "defaultProfile": "{6f1de2a1-0000-4a10-9b0e-a9c0de17c001}",
   "copyOnSelect": false,
   "copyFormatting": "none",
@@ -28,20 +28,20 @@
     "list": [
       {
         "guid": "{6f1de2a1-0000-4a10-9b0e-a9c0de17c001}",
-        "name": "Agent Console",
+        "name": "pitwall",
         "commandline": "pwsh.exe -NoLogo -NoExit -ExecutionPolicy Bypass -File \"__BUNDLE__\\platform\\windows\\pane-init.ps1\"",
         "startingDirectory": "C:/dev",
         "icon": "\ud83d\udc0e",
-        "tabTitle": "agent-console",
+        "tabTitle": "pitwall",
         "suppressApplicationTitle": false
       },
       {
         "guid": "{6f1de2a1-0000-4a10-9b0e-a9c0de17c003}",
-        "name": "Agent Console (Clean)",
+        "name": "pitwall (clean)",
         "commandline": "pwsh.exe -NoLogo -NoExit -ExecutionPolicy Bypass -File \"__BUNDLE__\\platform\\windows\\pane-init.ps1\" -Clean",
         "startingDirectory": "C:/dev",
         "icon": "\ud83d\udd12",
-        "tabTitle": "agent-console-clean",
+        "tabTitle": "pitwall-clean",
         "_comment": "Isolated Claude profile and its own herdr session. Separate login."
       },
       {

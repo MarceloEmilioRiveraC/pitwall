@@ -1,4 +1,18 @@
-# agent-console
+<div align="center">
+
+<img src="docs/media/banner.svg" alt="pitwall, a portable control room for coding agents" width="900">
+
+<p>
+<img alt="Platform" src="https://img.shields.io/badge/Windows%2010%202004%2B-supported-2ea44f">
+<img alt="Admin" src="https://img.shields.io/badge/admin%20rights-not%20needed-2ea44f">
+<img alt="Install" src="https://img.shields.io/badge/install-portable%2C%20one%20folder-c4a7e7">
+<img alt="License" src="https://img.shields.io/badge/license-MIT-blue">
+<img alt="Status" src="https://img.shields.io/badge/status-personal%20project-f6c177">
+</p>
+
+</div>
+
+# 🏎️ pitwall
 
 A portable, self-contained terminal control room for coding agents on Windows.
 
@@ -13,13 +27,22 @@ Claude Code setup. Delete the folder and it is gone.
 ```
 +------------------+--------------------------------+---------------------------+
 |  spaces          |                                |  tree            diff     |
-|   * agent-console|   claude / codex / any agent   |   > src/         @@ -1,4  |
+|   * pitwall      |   claude / codex / any agent   |   > src/         @@ -1,4  |
 |                  |                                |   M app.ts       - old    |
 |  agents          |                                |   A util.ts      + new    |
 |   * claude  idle |                                |                           |
 +------------------+--------------------------------+---------------------------+
    herdr sidebar          your agent                    herdr-file-viewer
 ```
+
+## 🏁 Why "pitwall"
+
+In Formula 1 the pit wall is the row of screens where the team watches every
+car's telemetry and makes the calls, while the drivers drive.
+
+That is the whole idea here. The agents drive. You sit at the wall, watch what
+they are doing, read the diffs as they land, and decide. The name is the job
+description.
 
 ## Why this exists
 
@@ -51,8 +74,8 @@ About 195 MB of downloads, roughly 115 MB on disk once built.
 ## Install
 
 ```powershell
-git clone <this-repo> agent-console
-cd agent-console
+git clone <this-repo> pitwall
+cd pitwall
 powershell -ExecutionPolicy Bypass -File .\bootstrap.ps1
 ```
 
@@ -72,15 +95,15 @@ output.
 ## Use
 
 ```powershell
-.\Start-AgentConsole.ps1
+.\Start-Pitwall.ps1
 ```
 
 Two modes:
 
 | Command | Claude Code reads | herdr session | Use it for |
 |---|---|---|---|
-| `.\Start-AgentConsole.ps1` | your normal `~/.claude`: your plugins, your CLAUDE.md, your login | `default` | your own projects |
-| `.\Start-AgentConsole.ps1 -Clean` | `.\config\claude`: no personal plugins, no personal CLAUDE.md, its own login | `clean` | client work, shared screens |
+| `.\Start-Pitwall.ps1` | your normal `~/.claude`: your plugins, your CLAUDE.md, your login | `default` | your own projects |
+| `.\Start-Pitwall.ps1 -Clean` | `.\config\claude`: no personal plugins, no personal CLAUDE.md, its own login | `clean` | client work, shared screens |
 
 `-WorkDir <path>` opens somewhere other than the parent folder.
 
@@ -174,9 +197,9 @@ measurements and how to change it are in
 ## Layout
 
 ```
-agent-console/
+pitwall/
   bootstrap.ps1              build bin\ from the manifest
-  Start-AgentConsole.ps1     the launcher, personal and -Clean modes
+  Start-Pitwall.ps1     the launcher, personal and -Clean modes
   Test-Bundle.ps1            43 checks: static, live, and global footprint
   Uninstall.ps1              reverse the two global side effects
   config/                    cross platform: works as-is on macOS and Linux
@@ -254,6 +277,29 @@ Icons render as empty boxes: the font did not install. Re-run
 herdr starts and exits instantly: `conpty\` is missing next to `herdr.exe`.
 herdr ships its own ConPTY runtime and will not run without it. Run
 `bootstrap.ps1 -Force`.
+
+## Project status
+
+**This is a personal project, published because it may as well be useful to
+someone.** It is not a product, there is no company behind it, and I make no
+money from it. It is open because there is no reason for it not to be.
+
+What that means in practice, so nobody's expectations get bruised:
+
+- **It is built for how I work.** Decisions get made on what I need, and the
+  code stays the shape I want it. If something here does not suit your setup,
+  that is not a bug, and forking is genuinely the right answer.
+- **No roadmap, no release cadence, no support promise.** It gets attention
+  when I am using it and it annoys me, which is often, but not on a schedule.
+- **Issues are welcome and I do read them.** A bug report, a Windows quirk I
+  have not hit, a thing that is broken on your machine: all worth opening. Just
+  do not expect a triage SLA.
+- **Help is welcome when it is genuinely useful.** If you have a fix or an idea
+  that clearly makes the thing better, open a PR and I will look at it properly.
+  I would rather say a friendly no to something that pulls the project sideways
+  than merge it and resent it later.
+
+Take it, fork it, strip it for parts. That is what it is here for.
 
 ## Licence
 

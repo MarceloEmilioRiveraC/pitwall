@@ -1,4 +1,4 @@
-# herdr-file-viewer configuration for the agent console
+# herdr-file-viewer configuration for the pitwall
 # =============================================================================
 #
 # bootstrap.ps1 renders this file (substituting __BUNDLE__) into the directory
