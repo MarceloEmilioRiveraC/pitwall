@@ -4,6 +4,12 @@
 # PowerShell is happier with CRLF on Windows and this bundle is Windows-first.
 *.ps1 text eol=crlf
 
+# Batch files MUST be CRLF. cmd.exe tolerates LF for simple lines but breaks on
+# multi-line constructs and labels, and the failure only shows up on a fresh
+# clone, which is the one machine nobody tests on.
+*.cmd text eol=crlf
+*.bat text eol=crlf
+
 # The .portable marker and downloaded binaries never reach the repo, but be
 # explicit in case someone force-adds one.
 *.exe binary
