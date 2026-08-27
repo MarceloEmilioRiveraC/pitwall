@@ -1,79 +1,40 @@
 # pitwall keys
 
-Press `ctrl+b i` any time to bring this back. `q` closes it.
+Which keys work depends on **which pane has focus**. Three sets:
 
-`ctrl+b` is the prefix: hold ctrl, tap b, release, then tap the next key.
+```
+ctrl+b then ...                          WORKS ANYWHERE
+  i  this card       f  file panel        z  zoom pane full screen
+  (ctrl+alt+k opens this card WITHOUT the prefix, if ctrl+b is misbehaving)
+  ?  all herdr keys  b  agent sidebar     x  close pane
+  h j k l  move focus  left down up right
+  c  new tab    n p  next / prev tab    1..9  jump to tab
+  w  projects   alt+g  lazygit          q  detach, keeps running
+```
 
-## The five that matter
+```
+IN THE FILE PANEL                  single keys, no ctrl, no prefix
+  ] [  next / previous CHANGED file        <- start here
+  enter open   tab  tree <-> content       e  EDIT beside the tree
+  c  only changed   d  diffs               D  diff style
+  f  find file      /  search  n N  hits   z  hide tree
+  y Y  copy path    A  annotate for agent  ?  all viewer keys
+  esc or q  CLOSES the panel   ->  ctrl+b f brings it back
+```
 
-| Key | Does |
-|---|---|
-| `ctrl+b f` | File viewer on the right. Press again to close it. |
-| `ctrl+b i` | This card. |
-| `ctrl+b ?` | herdr's own full key list. |
-| `ctrl+b z` | Zoom the focused pane to full screen, and back. |
-| `ctrl+b alt+g` | lazygit, over everything. |
+```
+WHILE EDITING (micro)              it repeats these on its bottom row
+  ctrl+s  save    ctrl+q  quit    ctrl+z  undo    ctrl+f  find
+```
 
-Nothing here can strand you. Close the console and it offers to reopen.
+```
+CAREFUL                            same key, other pane, other job
+  esc  in the agent pane  = interrupt the agent
+  esc  in the file panel  = close the panel
 
-## Moving around (herdr)
+STUCK?
+  forgot a key      ctrl+b i          panel gone       ctrl+b f
+  plain PS prompt   press enter       nothing responds check the focus
+```
 
-| Key | Does |
-|---|---|
-| `ctrl+b h` `j` `k` `l` | Focus the pane left / down / up / right |
-| `ctrl+b tab` | Next pane |
-| `ctrl+b c` | New tab |
-| `ctrl+b n` `p` | Next / previous tab |
-| `ctrl+b 1`..`9` | Jump to tab by number |
-| `ctrl+b v` | Split beside |
-| `ctrl+b -` | Split below |
-| `ctrl+b x` | Close the focused pane |
-| `ctrl+b r` | Resize mode, then arrows |
-| `ctrl+b b` | Show or hide the agent sidebar |
-| `ctrl+b q` | Detach. The session keeps running. |
-
-## File viewer
-
-No prefix in here. Single keys, no ctrl.
-
-| Key | Does |
-|---|---|
-| `up` `down` or `k` `j` | Move in the tree |
-| `enter` | Open a file, or expand a folder |
-| `tab` | Switch between tree and content |
-| `e` | Edit the selected file |
-| `z` | Hide the tree, content fills the pane |
-| `f` | Fuzzy find a file |
-| `/` then `n` `N` | Search in the file, next / previous hit |
-| `c` | Only changed files |
-| `d` | Working-tree diffs |
-| `D` | Cycle diff style: unified, side by side, plain |
-| `]` `[` | Next / previous changed file |
-| `y` `Y` | Copy relative / absolute path |
-| `?` | The viewer's own full key list |
-| `q` or `esc` | Close the viewer |
-
-`esc` always closes the viewer and cannot be remapped. That is upstream's
-safety floor, not a pitwall choice. `ctrl+b f` brings it straight back.
-
-## Editing (micro)
-
-Opened with `e` in the viewer. micro repeats these along its bottom row.
-
-| Key | Does |
-|---|---|
-| `ctrl+s` | Save |
-| `ctrl+q` | Quit, back to the viewer |
-| `ctrl+z` | Undo |
-| `ctrl+f` | Find |
-| `ctrl+g` | micro's own help |
-
-## If something looks wrong
-
-| | |
-|---|---|
-| Panel missing | `ctrl+b f` |
-| Pane too narrow to read a diff | `ctrl+b z` to zoom it |
-| Dropped to a plain PowerShell prompt | Press enter, it reopens |
-| Everything looks broken | Close the window, run `.\Start-Pitwall.ps1` again |
-| Still broken | `powershell -ExecutionPolicy Bypass -File .\Test-Bundle.ps1` |
+*Press any key to close.*

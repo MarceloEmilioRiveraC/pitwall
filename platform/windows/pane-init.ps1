@@ -117,15 +117,25 @@ if ($env:CLAUDE_CONFIG_DIR) { $herdrArgs = @('--session', 'clean') }
 # detached helper that waits for the server the line below starts and then does
 # both, once. See platform\windows\startup-once.ps1 for why the agent is typed
 # rather than started with `herdr agent start`.
-$startupSession = if ($env:CLAUDE_CONFIG_DIR) { 'clean' } else { '' }
+# The argument list is built conditionally, and that is not style.
+#
+# Passing '-Session', '' for the default session silently broke the whole
+# thing. PowerShell drops the empty string when it renders the command line, so
+# the child saw `-Session -Agent claude`: it bound `-Agent` as the VALUE of
+# -Session, found `claude` positional, failed parameter binding, and died
+# before its first line ran. The console came up with no agent and no panel,
+# and because the process is detached and hidden there was nothing anywhere to
+# say so. Only ever append a switch that has something to carry.
+$startupArgs = @(
+    '-NoProfile', '-ExecutionPolicy', 'Bypass',
+    '-File', (Join-Path $PSScriptRoot 'startup-once.ps1'),
+    '-BundleRoot', $BundleRoot
+)
+if ($env:CLAUDE_CONFIG_DIR) { $startupArgs += @('-Session', 'clean') }
+if ($Agent)                 { $startupArgs += @('-Agent', $Agent) }
+
 try {
-    Start-Process -FilePath 'powershell.exe' -WindowStyle Hidden -ArgumentList @(
-        '-NoProfile', '-ExecutionPolicy', 'Bypass',
-        '-File', (Join-Path $PSScriptRoot 'startup-once.ps1'),
-        '-BundleRoot', $BundleRoot,
-        '-Session', $startupSession,
-        '-Agent', $Agent
-    ) | Out-Null
+    Start-Process -FilePath 'powershell.exe' -WindowStyle Hidden -ArgumentList $startupArgs | Out-Null
 }
 catch { }   # the console must start even if the panel cannot
 

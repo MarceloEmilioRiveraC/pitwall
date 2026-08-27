@@ -76,7 +76,7 @@ tab_bar_position = "bottom"
 # Keep this SHORT. It shares the bottom row with the tab labels, and a long
 # string pushes them off. Three entries is about the limit; everything else
 # lives one keypress away in ctrl+b i.
-tab_bar_right = [{ type = "text", text = "ctrl+b i keys · f files · z zoom" }]
+tab_bar_right = [{ type = "text", text = "ctrl+alt+k keys · ctrl+b f files · ctrl+b z zoom" }]
 
 # Start with the agent sidebar as a rail, not a 26-column panel.
 #
@@ -146,12 +146,32 @@ height = "90%"
 # list cannot know about, the file viewer's keys and micro's, and points at
 # prefix+? for the rest. prefix+i is free in herdr 0.8.2's default bindings.
 #
-# glow needs -p (its pager). Without it glow renders, exits, and the popup
-# closes again before anything can be read.
+# Through a wrapper, not `glow -p` directly. glow's pager shells out to `less`,
+# which does not exist on Windows, so the popup opened, glow died instantly and
+# the popup shut again: ctrl+b i looked like a dead key. See keycard.cmd.
 [[keys.command]]
 key = "prefix+i"
 type = "popup"
-command = "__BUNDLE__/bin/glow.exe -p -w 78 __BUNDLE__/docs/keys.md"
+command = "__BUNDLE__/platform/windows/keycard.cmd"
 description = "key card"
+width = "86%"
+height = "90%"
+
+# The same card on a DIRECT chord, no prefix involved.
+#
+# Not a duplicate for the sake of it. Prefix mode has been unreliable in
+# practice (the first ctrl+b sometimes does not take, a second one does), and
+# the key card is the one thing you reach for precisely when nothing else is
+# working. A rescue key that depends on the mechanism you are trying to escape
+# is not a rescue key. herdr calls these "direct terminal-mode shortcuts" and
+# they bypass the prefix entirely.
+#
+# ctrl+alt+k because ctrl+k alone is readline's kill-line and would be taken
+# out of every shell and agent pane.
+[[keys.command]]
+key = "ctrl+alt+k"
+type = "popup"
+command = "__BUNDLE__/platform/windows/keycard.cmd"
+description = "key card (no prefix)"
 width = "86%"
 height = "90%"
