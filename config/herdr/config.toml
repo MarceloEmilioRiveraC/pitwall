@@ -76,7 +76,7 @@ tab_bar_position = "bottom"
 # Keep this SHORT. It shares the bottom row with the tab labels, and a long
 # string pushes them off. Three entries is about the limit; everything else
 # lives one keypress away in ctrl+b i.
-tab_bar_right = [{ type = "text", text = "ctrl+alt+k keys · ctrl+b f files · ctrl+b z zoom" }]
+tab_bar_right = [{ type = "text", text = "F1 keys · ctrl+b f files · ctrl+b z zoom" }]
 
 # Start with the agent sidebar as a rail, not a 26-column panel.
 #
@@ -157,19 +157,29 @@ description = "key card"
 width = "86%"
 height = "90%"
 
-# The same card on a DIRECT chord, no prefix involved.
+# The same card on F1, with no prefix involved.
 #
-# Not a duplicate for the sake of it. Prefix mode has been unreliable in
-# practice (the first ctrl+b sometimes does not take, a second one does), and
-# the key card is the one thing you reach for precisely when nothing else is
-# working. A rescue key that depends on the mechanism you are trying to escape
-# is not a rescue key. herdr calls these "direct terminal-mode shortcuts" and
-# they bypass the prefix entirely.
+# Not a duplicate for the sake of it: the key card is the one thing you reach
+# for when nothing else is working, and a rescue key that depends on the prefix
+# you are trying to escape is not a rescue key.
 #
-# ctrl+alt+k because ctrl+k alone is readline's kill-line and would be taken
-# out of every shell and agent pane.
+# F1 specifically, and this was measured rather than guessed. The first attempt
+# used ctrl+alt+k and did nothing at all, because herdr's own config warns that
+# "alt+... may depend on your terminal", and that is the one family it calls
+# unreliable. Its reliable list is ctrl+letter, function keys, and explicit
+# modified chords.
+#
+# ctrl+letter is out. Claude Code runs in the pane next door and already binds
+# ctrl+ c d e g j l n o p r s t v x and _, plus ctrl+x as a chord prefix. Any
+# ctrl+letter this bundle claims is one Claude Code silently stops receiving,
+# which is the conflict class to design against, not to discover later.
+#
+# Function keys are the only genuinely free surface: Claude Code binds none of
+# F1 to F12, micro uses ctrl chords, the file viewer leaves F1 to F12 unbound,
+# and Windows Terminal only takes F11 for fullscreen. F1 also means help
+# everywhere else, which is exactly what this is.
 [[keys.command]]
-key = "ctrl+alt+k"
+key = "f1"
 type = "popup"
 command = "__BUNDLE__/platform/windows/keycard.cmd"
 description = "key card (no prefix)"

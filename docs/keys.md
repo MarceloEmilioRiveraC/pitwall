@@ -5,7 +5,7 @@ Which keys work depends on **which pane has focus**. Three sets:
 ```
 ctrl+b then ...                          WORKS ANYWHERE
   i  this card       f  file panel        z  zoom pane full screen
-  (ctrl+alt+k opens this card WITHOUT the prefix, if ctrl+b is misbehaving)
+  F1 opens this card with NO prefix at all. Use it when you are stuck.
   ?  all herdr keys  b  agent sidebar     x  close pane
   h j k l  move focus  left down up right
   c  new tab    n p  next / prev tab    1..9  jump to tab
@@ -29,8 +29,8 @@ WHILE EDITING (micro)              it repeats these on its bottom row
 
 ```
 CAREFUL                            same key, other pane, other job
-  esc  in the agent pane  = interrupt the agent
-  esc  in the file panel  = close the panel
+  esc     agent pane = interrupt it   file panel = close it
+  ctrl+b  once = pitwall prefix       TWICE = Claude backgrounds its task
 
 STUCK?
   forgot a key      ctrl+b i          panel gone       ctrl+b f
