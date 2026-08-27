@@ -61,7 +61,15 @@ diff = "__BUNDLE__/platform/windows/render-diff.cmd"
 # A wrapper, not micro.exe directly, so micro's config stays inside the bundle
 # and a bundle path containing spaces still works. See
 # platform/windows/edit.cmd.
-editor = "__BUNDLE__/platform/windows/edit.cmd"
+# edit-split.cmd, not edit.cmd, opens micro in a pane BESIDE the viewer instead
+# of on top of it, so the file tree stays on screen while you edit and you can
+# see what you are about to open next. The pane closes itself when micro quits.
+#
+# This is the newer of the two and the one to complain about first. The stock
+# behaviour is one line away:
+#
+#editor = "__BUNDLE__/platform/windows/edit.cmd"
+editor = "__BUNDLE__/platform/windows/edit-split.cmd"
 
 # Alternatives, if micro is not to your taste:
 #   VS Code, opens in its own window rather than in the pane

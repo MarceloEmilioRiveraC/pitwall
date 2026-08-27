@@ -72,11 +72,18 @@ customising it.
 
 Three regions on screen:
 
-- **Sidebar, left.** `spaces` lists your workspaces with their git branch.
-  `agents` lists every agent herdr can see and whether it is working, blocked,
-  done or idle. Click either to jump.
+- **Sidebar, left.** Starts as a narrow rail showing agent state. `ctrl+b b`
+  expands it into the full panel: `spaces` lists your workspaces with their git
+  branch, `agents` lists every agent herdr can see and whether it is working,
+  blocked, done or idle. Click either to jump.
+
+  It starts collapsed on purpose. Expanded it costs 26 of the terminal's 171
+  columns, which pushes the file viewer under the 80 it needs to show a tree
+  and a diff side by side. See [Why the panes are this size](#why-the-panes-are-this-size).
 - **Centre.** Whatever you started. Usually the agent.
-- **Right.** The file viewer, when you press `ctrl+b f`.
+- **Right.** The file viewer. It opens by itself at launch. `ctrl+b f` closes
+  and reopens it.
+- **Bottom.** The tab row, with the keys you need most at the right edge.
 
 ---
 
@@ -86,16 +93,18 @@ Three regions on screen:
 2. Type `claude` in the centre pane. The sidebar picks it up within a second or
    two and starts tracking its state.
 3. Give it work.
-4. When it stops, press `ctrl+b f`. The file viewer opens on the right with a
-   tree of the repo, `M` next to modified files and `?` next to untracked ones.
+4. When it stops, look right. The file viewer is already there, with a tree of
+   the repo, `M` next to modified files and `?` next to untracked ones. If you
+   closed it, `ctrl+b f` brings it back.
 5. Press `]` repeatedly. Each press jumps to the next changed file and shows its
    diff. `[` goes back.
 6. See something wrong? Press `A` to annotate the range, then `y` to copy the
    note, and paste it into the agent's prompt. It gets the file, the lines and
    your comment, without you describing where anything is.
-7. Need to fix something yourself? Press `e`. The viewer steps aside, micro
-   opens **in the same pane** on that file, and the viewer comes back when you
-   quit, already showing your change as a diff.
+7. Need to fix something yourself? Press `e`. micro opens **in a pane beside
+   the viewer**, so the tree stays on screen and you can see what you are
+   editing next. `ctrl+s` saves, `ctrl+q` quits, and the editor pane closes
+   itself, leaving the viewer showing your change as a diff.
 8. `ctrl+b alt+g` for lazygit when you want to stage, commit or discard.
 
 The viewer itself is **read-only** by design, and that is the point: reviewing
@@ -112,14 +121,39 @@ Two ways to get a change made, and they are for different things:
 The annotation carries the file, the lines and your comment, so the agent does
 not have to be told where to look.
 
-### Getting more room for the diff
+### Why the panes are this size
 
-The viewer collapses to tree-only below roughly 90 columns. Two ways to fix
-that when the split is too narrow:
+The viewer needs **80 columns** to show the tree and the content side by side.
+Below that it shows one or the other, whichever has focus, which is what makes
+a diff unreadable. The number is `NARROW_SPLIT` in the viewer's own source, not
+an estimate.
+
+The budget it has to fit into, measured on a 1920 screen at 125% scaling with
+the window maximized:
+
+| | Columns |
+|---|---|
+| The whole terminal | 171 |
+| herdr's sidebar, expanded | 26 |
+| Left for the work pane and the viewer, split evenly | 72 each |
+
+72 is under 80, so with the sidebar expanded the diff can never render, no
+matter what else is closed. That is why the sidebar starts as a rail: it gives
+the two panes about 83 columns each and clears the threshold with a little
+room to spare.
+
+If it is still too narrow:
 
 - `ctrl+b z` zooms the focused pane to the whole window. Press it again to go
   back. This is the fastest option and the one to reach for.
+- `ctrl+b b` collapses the sidebar again if you expanded it.
 - Drag the border between panes with the mouse, or use the resize keys.
+
+### If you end up at a plain PowerShell prompt
+
+You closed herdr, usually with `ctrl+b q` or by closing the last pane. The
+console does not leave you stranded there: press **enter** and pitwall reopens.
+Type `q` then enter if you actually wanted a shell.
 
 ---
 
@@ -132,6 +166,7 @@ authoritative if this table ever drifts.
 
 | Key | Action |
 |---|---|
+| `ctrl+b i` | **The key card.** Everything below, plus the viewer's and micro's, over whatever you are doing |
 | `ctrl+b f` | **File viewer in a split.** The right-hand panel |
 | `ctrl+b shift+f` | File viewer in its own tab |
 | `ctrl+b alt+g` | lazygit in a popup |
@@ -527,18 +562,31 @@ bottom.
 
 `e` hands the selected file to whatever `editor` names in
 `config/file-viewer/config.toml`, which bootstrap renders into the plugin's
-config directory. The viewer suspends, the editor runs in the same pane, and
-the viewer resumes when the editor exits.
+config directory. The viewer suspends itself, runs that command, and resumes
+when it exits.
 
-The default points at a wrapper, not at micro directly:
+There are two wrappers in the bundle, and the difference is where the editor
+lands:
 
 ```toml
+# beside the viewer: the tree stays on screen. The default.
+editor = "__BUNDLE__/platform/windows/edit-split.cmd"
+
+# on top of the viewer: micro takes over the pane until you quit.
 editor = "__BUNDLE__/platform/windows/edit.cmd"
 ```
 
-`platform/windows/edit.cmd` sets `MICRO_CONFIG_HOME` to `bin/micro-config` so
-micro leaves nothing in `%APPDATA%\micro`, sets `COLORTERM`, and resolves the
-bundle from its own location so a path with spaces still works.
+`edit-split.cmd` splits the viewer's pane downward, starts micro in the new
+pane, and returns immediately so the viewer redraws its tree straight away. The
+command it types ends in `exit`, so the pane closes itself when micro quits
+rather than leaving a stray prompt behind. If any part of that fails it falls
+back to editing in place, because `e` going dead is worse than `e` being
+cramped.
+
+Both go through `platform/windows/edit.cmd` in the end, which sets
+`MICRO_CONFIG_HOME` to `bin/micro-config` so micro leaves nothing in
+`%APPDATA%\micro`, sets `COLORTERM`, and resolves the bundle from its own
+location so a path with spaces still works.
 
 To use something else, replace the value:
 

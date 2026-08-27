@@ -273,7 +273,11 @@ New-Item -ItemType Directory -Force -Path $wtSettingsDir | Out-Null
 # machine-independent. The runtime copy gets absolute paths, which is what lets
 # the console work when someone launches WindowsTerminal.exe directly instead of
 # going through Start-Pitwall.ps1.
-$settingsTemplate = Get-Content (Join-Path $Root 'platform\windows\wt-settings.json') -Raw
+# ReadAllText, not Get-Content -Raw: the latter reads the system ANSI codepage
+# under Windows PowerShell 5.1, so any non-ASCII byte in the template is
+# double-encoded by the UTF-8 write further down. Harmless while this file is
+# pure ASCII, wrong the first time it is not. See Build-HerdrConfig.ps1.
+$settingsTemplate = [System.IO.File]::ReadAllText((Join-Path $Root 'platform\windows\wt-settings.json'))
 $settingsRendered = $settingsTemplate.Replace('__BUNDLE__', $Root.Replace('\', '\\'))
 
 # Not Set-Content -Encoding UTF8: under Windows PowerShell 5.1 that writes a
@@ -347,7 +351,8 @@ else {
     }
     else {
         New-Item -ItemType Directory -Force -Path $viewerDir | Out-Null
-        $text  = (Get-Content $viewerTemplate -Raw).Replace('__BUNDLE__', $Root.Replace('\', '/'))
+        # ReadAllText for the same reason as the Windows Terminal template above.
+        $text  = [System.IO.File]::ReadAllText($viewerTemplate).Replace('__BUNDLE__', $Root.Replace('\', '/'))
         $noBom = New-Object System.Text.UTF8Encoding($false)
         [System.IO.File]::WriteAllText((Join-Path $viewerDir 'config.toml'), $text, $noBom)
         Write-Ok "viewer config -> $viewerDir"

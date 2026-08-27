@@ -102,11 +102,48 @@ if (-not (Test-Path (Join-Path $Bin 'conpty\conpty.dll'))) {
 $herdrArgs = @()
 if ($env:CLAUDE_CONFIG_DIR) { $herdrArgs = @('--session', 'clean') }
 
-# Call the exe by full path rather than relying on PATH resolution.
-& $herdrExe @herdrArgs
+# Bring the right-hand panel up with the console instead of making the user
+# split it by hand on every launch. herdr has no startup-layout config, so this
+# is a detached helper that waits for the server the line below starts, then
+# opens the viewer once. It refuses to act when a Files pane already exists,
+# because the plugin's action is a toggle and would otherwise close it.
+# See platform\windows\open-viewer-once.ps1.
+$viewerSession = if ($env:CLAUDE_CONFIG_DIR) { 'clean' } else { '' }
+try {
+    Start-Process -FilePath 'powershell.exe' -WindowStyle Hidden -ArgumentList @(
+        '-NoProfile', '-ExecutionPolicy', 'Bypass',
+        '-File', (Join-Path $PSScriptRoot 'open-viewer-once.ps1'),
+        '-BundleRoot', $BundleRoot,
+        '-Session', $viewerSession
+    ) | Out-Null
+}
+catch { }   # the console must start even if the panel cannot
 
-# herdr has exited. Leave the reason on screen instead of closing the pane,
-# because closeOnExit would otherwise hide whatever it printed.
-Write-Host ''
-Write-Host "herdr exited with code $LASTEXITCODE" -ForegroundColor DarkGray
-Write-Host "diagnostics: $LogFile" -ForegroundColor DarkGray
+# Call the exe by full path rather than relying on PATH resolution.
+#
+# The loop is the no-dead-ends rule, and it is here because of a real failure:
+# herdr exiting for ANY reason (ctrl+b q to detach, closing the last pane, a
+# crash) used to drop you at a bare PowerShell prompt that looked like a broken
+# console and gave no hint that the whole thing was one word away. Someone who
+# does not already know the command has no way back from there, which is the
+# difference between an application and a terminal that happened to run one.
+#
+# This cannot spin: Read-Host always waits for a human, so a herdr that dies
+# instantly asks once and waits rather than relaunching in a tight loop. The
+# exit code stays on screen either way.
+while ($true) {
+    & $herdrExe @herdrArgs
+    $exitCode = $LASTEXITCODE
+
+    Write-Host ''
+    Write-Host "  pitwall closed. herdr exit code $exitCode" -ForegroundColor DarkGray
+    Write-Host "  diagnostics: $LogFile" -ForegroundColor DarkGray
+    Write-Host ''
+    Write-Host '  [Enter] reopen pitwall     [q] stay at a PowerShell prompt' -ForegroundColor Cyan
+
+    if ((Read-Host '  >') -match '^\s*[qQ]') {
+        Write-Host ''
+        Write-Host '  Run .\Start-Pitwall.ps1 from the bundle root to come back.' -ForegroundColor DarkGray
+        break
+    }
+}

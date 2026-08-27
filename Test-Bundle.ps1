@@ -162,6 +162,25 @@ Test-Item 'rendered herdr config has no __BUNDLE__ left' {
     @(($raw -notmatch '__BUNDLE__'), $rendered)
 } -Fix 'Check platform\windows\Build-HerdrConfig.ps1'
 
+Test-Item 'the rendered config survives non-ASCII (no mojibake, no BOM)' {
+    $rendered = Join-Path $Bin 'herdr-config.toml'
+    if (-not (Test-Path $rendered)) { return @($false, 'not rendered yet') }
+    $bytes = [System.IO.File]::ReadAllBytes($rendered)
+    if ($bytes.Length -ge 3 -and $bytes[0] -eq 0xEF -and $bytes[1] -eq 0xBB -and $bytes[2] -eq 0xBF) {
+        return @($false, 'the rendered file starts with a UTF-8 BOM, which a strict TOML reader rejects')
+    }
+    # C3 82 is "Â", the signature of UTF-8 text that was read as ANSI and then
+    # written back as UTF-8. Reading the template with Get-Content -Raw under
+    # PowerShell 5.1 does exactly that, so this is the guard for that specific
+    # regression. It bites the moment the template stops being pure ASCII.
+    for ($i = 0; $i -lt $bytes.Length - 1; $i++) {
+        if ($bytes[$i] -eq 0xC3 -and $bytes[$i + 1] -eq 0x82) {
+            return @($false, "double-encoded UTF-8 at byte $i. Build-HerdrConfig.ps1 must read with [System.IO.File]::ReadAllText, not Get-Content -Raw")
+        }
+    }
+    @($true, "$($bytes.Length) bytes, clean UTF-8")
+} -Fix 'platform\windows\Build-HerdrConfig.ps1 must both READ and WRITE UTF-8 explicitly. Get-Content -Raw reads the ANSI codepage on Windows PowerShell 5.1.'
+
 Test-Item 'herdr accepts the config (herdr config check)' {
     $rendered = Join-Path $Bin 'herdr-config.toml'
     $env:HERDR_CONFIG_PATH = $rendered
@@ -235,7 +254,9 @@ Test-Item 'file viewer exposes its Windows actions' {
 
 foreach ($script in 'bootstrap.ps1', 'Start-Pitwall.ps1', 'Uninstall.ps1',
                     'Test-Bundle.ps1', 'platform\windows\pane-init.ps1',
-                    'platform\windows\Build-HerdrConfig.ps1') {
+                    'platform\windows\Build-HerdrConfig.ps1',
+                    'platform\windows\open-viewer-once.ps1',
+                    'platform\windows\edit-split.ps1') {
     Test-Item "$script parses" ([scriptblock]::Create(@"
         `$errs = `$null
         [void][System.Management.Automation.Language.Parser]::ParseFile(
@@ -283,9 +304,19 @@ else {
     } -Fix 'The server started but will not create a pane. Check %APPDATA%\herdr\sessions\*\herdr-server.log'
 
     Test-Item 'the pane shell puts bin\ on PATH (delta, bat, glow, lazygit)' {
+        # Pick the pane with no label, which is the one running the shell.
+        # Taking the FIRST pane_id instead is wrong the moment anything opens a
+        # pane of its own: a plugin that auto-docks a sidebar, or the launcher
+        # opening the file viewer, sorts ahead of the shell and this check then
+        # types `where.exe delta` into a TUI that swallows it. The failure looks
+        # exactly like a broken default_shell, which is the wrong place to look.
+        # Panes herdr or a plugin creates are labelled ("Sidebar", "Files");
+        # the shell pane carries no label key at all.
         $panes = & $herdr --session $testName pane list 2>&1 | Out-String
-        if ($panes -notmatch '"pane_id"\s*:\s*"([^"]+)"') { return @($false, 'no pane to test') }
-        $pane = $Matches[1]
+        $shell = ($panes | ConvertFrom-Json).result.panes |
+                 Where-Object { -not $_.label } | Select-Object -First 1
+        if (-not $shell) { return @($false, 'no unlabelled shell pane to test') }
+        $pane = $shell.pane_id
         & $herdr --session $testName pane send-text $pane 'where.exe delta' 2>$null | Out-Null
         & $herdr --session $testName pane send-keys $pane 'Enter' 2>$null | Out-Null
         Start-Sleep -Seconds 4

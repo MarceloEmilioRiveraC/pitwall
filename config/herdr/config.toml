@@ -62,6 +62,41 @@ rows = [
 [ui]
 tab_bar_position = "bottom"
 
+# The always-visible hint line, in the bottom bar next to the tabs.
+#
+# This is the answer to the single loudest complaint about the console: you
+# are in the middle of something, you need a key, and there is nowhere on
+# screen that tells you. herdr has no hint-bar feature, but tab_bar_right takes
+# ordered status entries and one of the supported types is plain text, so the
+# bar doubles as one.
+#
+# The key name is `text`, not `value`. `value` parses as an error, which
+# `herdr config check` catches immediately.
+#
+# Keep this SHORT. It shares the bottom row with the tab labels, and a long
+# string pushes them off. Three entries is about the limit; everything else
+# lives one keypress away in ctrl+b i.
+tab_bar_right = [{ type = "text", text = "ctrl+b i keys · f files · z zoom" }]
+
+# Start with the agent sidebar as a rail, not a 26-column panel.
+#
+# This is what makes the right-hand diff readable, and the arithmetic is the
+# whole reason. Maximized on a 1920 screen at 125% scaling the terminal is 171
+# columns (measured, not computed). herdr's expanded sidebar takes 26 of them,
+# leaving 144 for the work pane and the file viewer. The viewer splits 50/50
+# and has a hard NARROW_SPLIT of 80 columns below which it stops showing the
+# tree and the content side by side and shows only one of them. 144 / 2 = 72,
+# which is under 80, so the default layout could never render a diff beside the
+# tree no matter what else was closed.
+#
+# "compact" and not "hidden" on purpose: the collapsed rail still shows agent
+# state, which is requirement one of this whole bundle. "hidden" would buy a
+# few more columns and defeat the point.
+#
+# herdr's own note: this takes effect on the NEXT launch, not on reload.
+sidebar_start_collapsed = true
+sidebar_collapsed_mode = "compact"
+
 # Notifications in-app rather than through the OS, so a background agent
 # finishing does not steal focus from whatever you are reading.
 [ui.toast]
@@ -101,4 +136,22 @@ type = "popup"
 command = "__BUNDLE__/bin/lazygit.exe"
 description = "lazygit"
 width = "90%"
+height = "90%"
+
+# The key card, over everything, in one keypress.
+#
+# Deliberately NOT bound to prefix+? even though that is the obvious key:
+# prefix+? is herdr's own generated key list, which is better than anything
+# written by hand and should stay reachable. This card covers what herdr's
+# list cannot know about, the file viewer's keys and micro's, and points at
+# prefix+? for the rest. prefix+i is free in herdr 0.8.2's default bindings.
+#
+# glow needs -p (its pager). Without it glow renders, exits, and the popup
+# closes again before anything can be read.
+[[keys.command]]
+key = "prefix+i"
+type = "popup"
+command = "__BUNDLE__/bin/glow.exe -p -w 78 __BUNDLE__/docs/keys.md"
+description = "key card"
+width = "86%"
 height = "90%"

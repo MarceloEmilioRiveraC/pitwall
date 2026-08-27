@@ -276,6 +276,42 @@ The rendered `settings.json` came out with a byte order mark, which is a parse
 error for a strict JSON reader. Replaced with
 `[System.IO.File]::WriteAllText` and a `UTF8Encoding($false)`. **[ran]**
 
+### And the same defect on the read side, found later
+
+The fix above was applied to every write and to no read. `Get-Content -Raw`
+under Windows PowerShell 5.1 decodes with the system ANSI codepage, not UTF-8,
+so a template byte pair like `C2 B7` (the `·` separator in the tab-bar hint)
+comes back as the two Latin-1 characters `Â·`, and the UTF-8 write then encodes
+*those*. The file lands as `C3 82 C2 B7` and herdr renders mojibake. **[ran]**
+
+It stayed invisible for as long as every template was pure ASCII, which they
+all were until the hint line was added. Three read sites had it:
+`Build-HerdrConfig.ps1`, and both renders in `bootstrap.ps1`. All three now use
+`[System.IO.File]::ReadAllText`, which defaults to UTF-8 and strips a BOM, the
+exact inverse of the write.
+
+This is defect pattern 6, a fix applied in N places and missed in the N+1th.
+The guard is a `Test-Bundle` check that scans the rendered config for the `C3
+82` signature, which only means something because that file is now the one
+template with non-ASCII in it.
+
+### The self test typed into the wrong pane
+
+`Test-Bundle` picked the **first** `pane_id` out of `pane list` as the shell
+pane. That held for exactly as long as nothing else opened a pane. Installing
+`herdr-sidebar` broke it: the sidebar auto-docked, sorted ahead of the shell in
+the listing, and the PATH check sent `where.exe delta` into a file tree that
+swallowed it. **[ran]**
+
+The failure message accused `[terminal] default_shell`, which was correct and
+had nothing to do with it. A wrong diagnostic is worse than none, because it
+sends the next person somewhere real to look for a problem that is not there.
+
+Now it selects the pane with no `label`. herdr and its plugins label the panes
+they create (`Sidebar`, `Files`, `edit`); the shell pane carries no label key.
+Proven both ways: 42/43 with the sidebar's auto-open on, 43/43 with it off, and
+the same on the fixed check with the sidebar gone entirely. **[ran]**
+
 ### The theme name was invented
 
 `rose-pine-moon` is not a valid herdr theme. `herdr config check` listed the
@@ -332,6 +368,13 @@ is outside the bundle's scope.
 | 13 | The bundle works on a machine that is not this one | **not verified** |
 | 14 | A fresh login inside a clean profile | **not verified** |
 | 15 | Long-run stability of herdr on Windows | **not verified** |
+| 16 | Terminal is 171x48 columns maximized at 125% scaling | **[ran]** |
+| 17 | `auto_open:false` stops herdr-sidebar auto-docking, and the explicit toggle still works | **[ran]** |
+| 18 | herdr-sidebar's auto-open is what broke the self test, 42/43 against 43/43 | **[ran]** |
+| 19 | The launcher's helper opens the viewer, and refuses to when one is already open | **[ran]** |
+| 20 | `e` opens micro beside the viewer, the tree survives, and the pane closes on quit | **[ran]** |
+| 21 | The rendered config keeps non-ASCII intact and carries no BOM | **[ran]** |
+| 22 | The tab-bar hint line and the `ctrl+b i` popup draw correctly | **not verified**, needs a client |
 
 ## 11. Not checked
 
@@ -347,11 +390,91 @@ is outside the bundle's scope.
   issue reports the VS Code extension ignores it, so assume the desktop app does
   too. It does not matter here: `-Clean` targets the CLI inside herdr.
 
-## 12. Next
+## 12. herdr-sidebar, evaluated and dropped
+
+`alexarthurs/herdr-sidebar` 0.10.0 was installed and tested for a week. It is
+well built and it is gone. Both halves matter, so here is the reasoning.
+
+What it does well: a real file tree with per-filetype icons, a context menu, a
+source control panel (Changes, Graph, Commits, File History, Branches,
+Worktrees, Remotes, Stashes, Tags), in-pane editing, and `Shift+A` for an AI
+commit message. That last one works: against a dirty repo it produced *"Add
+variable binding and string interpolation to main function"* in about twenty
+seconds. **[ran]**
+
+Why it went anyway:
+
+| Cost | Detail |
+|---|---|
+| Duplicates the file viewer | Tree, preview and rendered markdown were already there |
+| Duplicates micro | Its editor refuses files over 5000 lines and self-labels experimental **[source]** |
+| Duplicates lazygit | Already bound to `ctrl+b alt+g` |
+| 32 columns | On a 171-column terminal, next to herdr's own 26 |
+| Hijacks a tab | Its preview renamed a whole herdr tab `README.md · preview` **[ran]** |
+| Four processes | Plus pane-ID churn as it respawned panes |
+| Broke the self test | See section 8 |
+
+The AI commit message is the only thing genuinely not available elsewhere, and
+it is `claude -p --model haiku` over `git diff` with a 16 KiB cap and a 60
+second timeout. **[source]** Reproducible in a few lines without a plugin.
+
+Two findings worth keeping regardless:
+
+- **Its auto-open can be turned off**, but not where you would look. `auto_open`
+  lives in `%LOCALAPPDATA%\herdr\plugins\herdr-sidebar\state.json`, not in the
+  plugin's TOML config dir, and it defaults to **true** with a missing key
+  still reading true. **[source]+[ran]** That file is machine-global state
+  outside the bundle, so `HERDR_CONFIG_PATH` never covered it, which extends
+  section 6.
+- **Its AI commit message degrades silently.** Any failure of the `claude` call
+  falls back to a filename heuristic (`"Update main.rs and 1 more"`) while the
+  status line still reads *"✧ suggestion ready"*. **[source]** In `-Clean` mode
+  the isolated profile has no credentials by design, so the sparkle would have
+  been quietly guessing. **[reasoned]**, not run.
+
+## 13. The layout arithmetic
+
+The reason the right-hand diff never rendered, and the numbers behind the
+current defaults.
+
+| | Columns | |
+|---|---|---|
+| Terminal, 1920 at 125% scaling, maximized | **171** | **[ran]**, measured, not computed |
+| herdr's sidebar, expanded | 26 | **[source]** |
+| herdr-sidebar's pane, when installed | 32 | **[source]** |
+| What the viewer needs for tree plus content | **80** | **[source]**, `NARROW_SPLIT` |
+
+With the sidebar expanded, the work pane and the viewer split 144 columns, so
+72 each. Under 80, so the viewer showed the tree *or* the content and never
+both. Removing the plugin alone did not fix it; that was the trap. The sidebar
+starting as a rail is what clears the threshold, at roughly 83 each.
+
+Two things follow from this that are easy to get wrong:
+
+- The viewer's own `tree_width` and `tree_max_cols` size the split **inside**
+  its pane and cannot widen the pane itself. **[source]**
+- The viewer's launcher hardcodes `pane split --direction right --focus` with
+  no ratio, so 50/50 is not configurable from the viewer side. **[source]**
+  `herdr pane split` does accept `--ratio`. **[ran]**
+
+`sidebar_collapsed_mode` is `"compact"` and not `"hidden"` deliberately. The
+rail still reports agent state, which is requirement one in section 1. Hidden
+would buy a few columns and defeat the purpose of the bundle.
+
+## 14. Next
 
 1. Prove `-Clean` end to end.
 2. Test on a second machine. Until then, "your brother can run this" is a
    hypothesis, not a result.
-3. Optional: `platform/macos/` with a shell launcher and a Brewfile.
-4. Optional: Neovim, once there is a reason to edit in the right pane rather
-   than read.
+3. Confirm the two client-rendered things by eye, since neither can be checked
+   from a headless server: the tab-bar hint line, and the `ctrl+b i` key card
+   popup. The config parses and glow renders the card standalone **[ran]**, but
+   that a herdr popup draws it is **[reasoned]** from the working lazygit
+   binding.
+4. Decide whether `edit-split.cmd` stays the default. It is the newer of the
+   two editor wrappers and the one to blame first if `e` misbehaves.
+5. Optional: `platform/macos/` with a shell launcher and a Brewfile.
+6. Neovim is no longer pending. The reason to want it was editing in the right
+   pane rather than reading, and `e` now opens micro in a pane beside the tree
+   without a C compiler anywhere. Revisit only if micro itself becomes the
+   limit.
