@@ -11,3 +11,6 @@ config/herdr/plugins/
 
 # Windows Terminal portable runtime state
 platform/windows/settings-runtime/
+
+# Local-only notes. The vision brief lives here and stays on this machine.
+*.local.md

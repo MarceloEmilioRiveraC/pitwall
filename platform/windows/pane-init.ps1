@@ -30,7 +30,16 @@ param(
     #
     # Each mode therefore gets its own Windows Terminal profile, and the profile
     # carries the flag on its command line.
-    [switch]$Clean
+    [switch]$Clean,
+
+    # Agent to start automatically in the work pane. Empty starts nothing.
+    #
+    # On the command line for the same reason -Clean is: Windows Terminal hands
+    # a profile a fresh environment, so this cannot be inherited. Point a
+    # profile at a different value ('gemini', 'codex', 'opencode', ...) to run
+    # a different agent in the same console; herdr detects whichever one is
+    # running from its terminal title.
+    [string]$Agent = 'claude'
 )
 
 # platform\windows\pane-init.ps1 -> bundle root is two levels up.
@@ -102,19 +111,20 @@ if (-not (Test-Path (Join-Path $Bin 'conpty\conpty.dll'))) {
 $herdrArgs = @()
 if ($env:CLAUDE_CONFIG_DIR) { $herdrArgs = @('--session', 'clean') }
 
-# Bring the right-hand panel up with the console instead of making the user
-# split it by hand on every launch. herdr has no startup-layout config, so this
-# is a detached helper that waits for the server the line below starts, then
-# opens the viewer once. It refuses to act when a Files pane already exists,
-# because the plugin's action is a toggle and would otherwise close it.
-# See platform\windows\open-viewer-once.ps1.
-$viewerSession = if ($env:CLAUDE_CONFIG_DIR) { 'clean' } else { '' }
+# Come up ready to work: the right-hand panel open and the agent already
+# running, instead of one bare pane you have to split and then type into on
+# every single launch. herdr has no startup-layout config, so this is a
+# detached helper that waits for the server the line below starts and then does
+# both, once. See platform\windows\startup-once.ps1 for why the agent is typed
+# rather than started with `herdr agent start`.
+$startupSession = if ($env:CLAUDE_CONFIG_DIR) { 'clean' } else { '' }
 try {
     Start-Process -FilePath 'powershell.exe' -WindowStyle Hidden -ArgumentList @(
         '-NoProfile', '-ExecutionPolicy', 'Bypass',
-        '-File', (Join-Path $PSScriptRoot 'open-viewer-once.ps1'),
+        '-File', (Join-Path $PSScriptRoot 'startup-once.ps1'),
         '-BundleRoot', $BundleRoot,
-        '-Session', $viewerSession
+        '-Session', $startupSession,
+        '-Agent', $Agent
     ) | Out-Null
 }
 catch { }   # the console must start even if the panel cannot

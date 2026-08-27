@@ -90,8 +90,14 @@ Three regions on screen:
 ## The daily loop
 
 1. `.\Start-Pitwall.ps1 -WorkDir C:\dev\my-project`
-2. Type `claude` in the centre pane. The sidebar picks it up within a second or
-   two and starts tracking its state.
+2. Claude Code is already starting in the centre pane. The sidebar picks it up
+   within a second or two and starts tracking its state.
+
+   To run a different agent, or none, point the Windows Terminal profile's
+   `-Agent` at another one. herdr drives 22 kinds (`claude`, `codex`, `gemini`,
+   `cursor`, `opencode`, `copilot`, `qwen` and more) and detects whichever is
+   running from its terminal title, so nothing else changes. `-Agent ''` leaves
+   you at a shell prompt.
 3. Give it work.
 4. When it stops, look right. The file viewer is already there, with a tree of
    the repo, `M` next to modified files and `?` next to untracked ones. If you

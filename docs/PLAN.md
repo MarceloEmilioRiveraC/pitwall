@@ -432,7 +432,43 @@ Two findings worth keeping regardless:
   the isolated profile has no credentials by design, so the sparkle would have
   been quietly guessing. **[reasoned]**, not run.
 
-## 13. The layout arithmetic
+## 13. `herdr agent start` cannot be used here, and why
+
+herdr ships `herdr agent start <name> --kind <kind> --pane <id>`, which starts
+one of 22 supported agent kinds and waits for it to report interactive
+readiness. It is the obvious way to auto-start Claude Code, and it does not
+work in this bundle.
+
+Against a pitwall pane it fails immediately:
+
+```
+{"error":{"code":"agent_pane_busy",
+          "message":"agent target pane w1:p1 is not an available shell"}}
+```
+
+The pane is demonstrably at a prompt (`PS C:\dev\pitwall>` is on screen) and
+still herdr refuses. **[ran]** The cause is this bundle's own workaround: with
+`[terminal] default_shell` pointing at `agent-shell.cmd`, herdr does not
+recognise the pane as a shell it can drive. Swapping the wrapper for plain
+`pwsh.exe` makes `agent start` succeed on the first try, agent list reporting
+`claude` / `idle` / `interactive_ready: true`. **[ran]**
+
+That is a straight conflict, because `agent-shell.cmd` is the only thing
+putting `delta`, `bat`, `glow` and `lazygit` on a pane's PATH (section 8).
+Confirmed there is no free lunch: `default_shell = "pwsh.exe -NoLogo -NoExit
+-Command $env:PATH = ..."` parses, and then delivers neither the PATH nor a
+working `agent start`. **[ran]**
+
+Resolved by not using `agent start` at all. The startup helper types the agent's
+name into the pane and presses Enter, exactly as a human would, and herdr
+detects it from the terminal title regardless of how it was launched:
+`claude` / `idle` / `✳ Claude Code`, with the wrapper intact. **[ran]**
+
+Worth knowing if `agent start` is ever wanted for something else, for instance
+`herdr agent prompt <target> <text> --wait` to drive an agent from a script.
+That whole family is unavailable while the wrapper is in place.
+
+## 14. The layout arithmetic
 
 The reason the right-hand diff never rendered, and the numbers behind the
 current defaults.
@@ -461,7 +497,7 @@ Two things follow from this that are easy to get wrong:
 rail still reports agent state, which is requirement one in section 1. Hidden
 would buy a few columns and defeat the purpose of the bundle.
 
-## 14. Next
+## 15. Next
 
 1. Prove `-Clean` end to end.
 2. Test on a second machine. Until then, "your brother can run this" is a

@@ -255,7 +255,7 @@ Test-Item 'file viewer exposes its Windows actions' {
 foreach ($script in 'bootstrap.ps1', 'Start-Pitwall.ps1', 'Uninstall.ps1',
                     'Test-Bundle.ps1', 'platform\windows\pane-init.ps1',
                     'platform\windows\Build-HerdrConfig.ps1',
-                    'platform\windows\open-viewer-once.ps1',
+                    'platform\windows\startup-once.ps1',
                     'platform\windows\edit-split.ps1') {
     Test-Item "$script parses" ([scriptblock]::Create(@"
         `$errs = `$null
