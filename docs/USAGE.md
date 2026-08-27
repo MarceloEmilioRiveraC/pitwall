@@ -580,19 +580,23 @@ There are two wrappers in the bundle, and the difference is where the editor
 lands:
 
 ```toml
-# beside the viewer: the tree stays on screen. The default.
-editor = "__BUNDLE__/platform/windows/edit-split.cmd"
-
-# on top of the viewer: micro takes over the pane until you quit.
+# on top of the viewer: micro takes the whole pane. The default.
 editor = "__BUNDLE__/platform/windows/edit.cmd"
+
+# beside the viewer, in a pane below it.
+editor = "__BUNDLE__/platform/windows/edit-split.cmd"
 ```
 
-`edit-split.cmd` splits the viewer's pane downward, starts micro in the new
-pane, and returns immediately so the viewer redraws its tree straight away. The
-command it types ends in `exit`, so the pane closes itself when micro quits
-rather than leaving a stray prompt behind. If any part of that fails it falls
-back to editing in place, because `e` going dead is worse than `e` being
-cramped.
+The split was tried as the default and reverted. Keeping the tree visible
+sounded right and was wrong in use: pressing `e` means "change this line now",
+and what the split produced was the same file on screen twice, once as a diff
+you had stopped reading and once in a half height editor. Editing gets the
+whole pane.
+
+`edit-split.cmd` is kept because a better version of the idea exists: two
+panes showing the ORIGINAL beside the one you are editing, rather than a
+preview of the file you are already in. That is a separate feature, not this
+key.
 
 Both go through `platform/windows/edit.cmd` in the end, which sets
 `MICRO_CONFIG_HOME` to `bin/micro-config` so micro leaves nothing in

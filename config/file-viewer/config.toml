@@ -61,15 +61,21 @@ diff = "__BUNDLE__/platform/windows/render-diff.cmd"
 # A wrapper, not micro.exe directly, so micro's config stays inside the bundle
 # and a bundle path containing spaces still works. See
 # platform/windows/edit.cmd.
-# edit-split.cmd, not edit.cmd, opens micro in a pane BESIDE the viewer instead
-# of on top of it, so the file tree stays on screen while you edit and you can
-# see what you are about to open next. The pane closes itself when micro quits.
+# edit.cmd: micro takes over the viewer's pane for as long as you are editing,
+# and the viewer comes back when you quit.
 #
-# This is the newer of the two and the one to complain about first. The stock
-# behaviour is one line away:
+# This is the default again after trying the alternative below. Splitting the
+# pane to keep the tree visible sounded right and was wrong in use: pressing
+# `e` means "I want to change this line now", and what it produced was the file
+# shown twice, once as a diff you were no longer reading and once in a half
+# height editor. Editing is a full attention task, so it gets the whole pane.
 #
-#editor = "__BUNDLE__/platform/windows/edit.cmd"
-editor = "__BUNDLE__/platform/windows/edit-split.cmd"
+# The alternative is kept because a future version of the idea is worth having:
+# two panes, one showing the ORIGINAL and one editing, rather than a preview of
+# the same thing you are already in. That is a different feature, not this key.
+#
+#editor = "__BUNDLE__/platform/windows/edit-split.cmd"
+editor = "__BUNDLE__/platform/windows/edit.cmd"
 
 # Alternatives, if micro is not to your taste:
 #   VS Code, opens in its own window rather than in the pane
