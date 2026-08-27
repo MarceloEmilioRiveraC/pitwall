@@ -50,18 +50,22 @@ $out = @()
 $out += ''
 $out += '  {0}{1}pitwall keys{2}      {3}any key closes this{4}' -f $iris, $bold, $reset, $muted, $reset
 $out += ''
+$out += '  {0}{1}HOW TO PRESS THESE{2}   {3}read this first, it is the usual reason nothing happens{4}' -f $gold, $bold, $reset, $muted, $reset
+$out += '    {0}ctrl+b{1} is a {2}{3}PREFIX{4}, not a chord. Hold ctrl, tap b, then {5}{6}LET GO OF CTRL{7}{8}' -f $foam, $reset, $love, $bold, $reset, $love, $bold, $reset, $reset
+$out += '    and tap the next key {0}on its own{1}. Still holding ctrl matches nothing.' -f $bold, $reset
+$out += ''
 $out += '  {0}{1}THE FOUR YOU NEED{2}' -f $gold, $bold, $reset
-$out += (Row 'F1'         'this card, from anywhere, no prefix')
-$out += (Row 'ctrl+b  f'  'show or hide the file panel')
-$out += (Row 'ctrl+b  z'  'zoom the focused pane full screen')
-$out += (Row 'ctrl+b  ?'  'every herdr key there is')
+$out += (Row 'F1'              'this card. one key, no prefix, works anywhere')
+$out += (Row 'ctrl+b then f'   'show or hide the file panel')
+$out += (Row 'ctrl+b then z'   'zoom the focused pane full screen')
+$out += (Row 'ctrl+b then ?'   'every herdr key there is')
 $out += ''
 $out += (Rule)
 $out += '  {0}{1}WHERE YOU ARE DECIDES WHICH KEYS WORK{2}' -f $iris, $bold, $reset
 
 $out += (Head 'AGENT PANE' 'Claude Code')
-$out += (Row 'esc'          'interrupt the agent')
-$out += (Row 'ctrl+b  h l'  'move focus left or right')
+$out += (Row 'esc'              'interrupt the agent')
+$out += (Row 'ctrl+b then h l'  'move focus left or right')
 
 $out += (Head 'FILE PANEL' 'single keys. no ctrl, no prefix')
 $out += (Row '] ['          'next / previous CHANGED file          <- the loop')
@@ -70,10 +74,10 @@ $out += (Row 'enter   tab'  'open file   /   tree <-> content')
 $out += (Row 'c   d   D'    'only changed  /  diffs  /  diff style')
 $out += (Row 'f   /'        'find a file  /  search inside this one')
 $out += (Row 'A  then  y'   'annotate for the agent, then copy it')
-$out += (Row 'esc  or  q'   'CLOSES the panel. ctrl+b f brings it back')
+$out += (Row 'esc  or  q'   'CLOSES the panel. ctrl+b then f brings it back')
 
 $out += (Head 'EDITOR' 'micro. it repeats these on its own bottom row')
-$out += (Row 'ctrl+s  ctrl+q'  'save   /   quit')
+$out += (Row 'ctrl+s  ctrl+q'  'save / quit. real chords, hold ctrl for these')
 
 $out += ''
 $out += (Rule)
@@ -81,10 +85,8 @@ $out += '  {0}{1}WATCH OUT{2}' -f $love, $bold, $reset
 $out += '    {0}{1}esc{2}       {3}interrupts in the agent pane, CLOSES in the file panel{4}' -f $love, $bold, $reset, $muted, $reset
 $out += '    {0}{1}ctrl+b{2}    {3}twice in a row makes Claude background its task{4}' -f $love, $bold, $reset, $muted, $reset
 $out += ''
-$out += (Rule)
-$out += '  {0}{1}THE REST{2}   {3}all with the ctrl+b prefix{4}' -f $muted, $bold, $reset, $muted, $reset
+$out += '  {0}{1}THE REST{2}   {3}tap ctrl+b, let go, then one of these{4}' -f $muted, $bold, $reset, $muted, $reset
 $out += '    {0}c n p 1-9{1} tabs     {2}w{3} projects   {4}b{5} sidebar   {6}x{7} close pane   {8}q{9} detach' -f $foam, $reset, $foam, $reset, $foam, $reset, $foam, $reset, $foam, $reset
 $out += '    {0}alt+g{1} lazygit      {2}v{3} split beside     {4}-{5} split below     {6}r{7} resize' -f $foam, $reset, $foam, $reset, $foam, $reset, $foam, $reset
-$out += ''
 
 $out | ForEach-Object { Write-Host $_ }

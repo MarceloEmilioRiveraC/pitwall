@@ -165,7 +165,11 @@ Type `q` then enter if you actually wanted a shell.
 
 ## Every key
 
-The prefix is `ctrl+b`. Press `ctrl+b ?` at any time for the live list, which is
+The prefix is `ctrl+b`, and it is a prefix and not a chord: hold ctrl, tap b,
+**release ctrl**, then tap the next key on its own. Holding ctrl for the second
+key matches nothing, which is the usual reason a binding looks dead.
+
+Press `ctrl+b` then `?` at any time for the live list, which is
 authoritative if this table ever drifts.
 
 ### herdr
