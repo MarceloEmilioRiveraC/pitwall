@@ -172,7 +172,8 @@ authoritative if this table ever drifts.
 
 | Key | Action |
 |---|---|
-| `ctrl+b i` | **The key card.** Everything below, plus the viewer's and micro's, over whatever you are doing |
+| `F1` | **The key card.** Everything below, plus the viewer's and micro's, over whatever you are doing. No prefix, so it works even when you are lost |
+| `ctrl+b i` | The same card, if you prefer the prefix |
 | `ctrl+b f` | **File viewer in a split.** The right-hand panel |
 | `ctrl+b shift+f` | File viewer in its own tab |
 | `ctrl+b alt+g` | lazygit in a popup |

@@ -163,16 +163,15 @@ Test-Item 'rendered herdr config has no __BUNDLE__ left' {
 } -Fix 'Check platform\windows\Build-HerdrConfig.ps1'
 
 Test-Item 'the key card renders and fits the popup without scrolling' {
-    $glow = Join-Path $Bin 'glow.exe'
-    $card = Join-Path $Root 'docs\keys.md'
-    if (-not (Test-Path $glow)) { return @($false, 'glow.exe missing') }
-    if (-not (Test-Path $card)) { return @($false, 'docs\keys.md missing') }
+    $card = Join-Path $Root 'platform\windows\keycard.ps1'
+    if (-not (Test-Path $card)) { return @($false, 'keycard.ps1 missing') }
     # There is no pager on Windows: glow -p and bat --paging both shell out to
     # `less`, which does not exist, so the card cannot scroll. It has to fit.
     # The popup is 90% of a 48-row terminal, so roughly 43 usable rows.
-    $lines = (& $glow -w 76 $card 2>&1 | Measure-Object -Line).Lines
+    $out = & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $card 2>&1
+    $lines = ($out | Measure-Object -Line).Lines
     @(($lines -gt 0 -and $lines -le 40), "$lines rendered rows, budget 40")
-} -Fix 'Shorten docs\keys.md. A card that does not fit is a card that silently loses its bottom rows, and no pager exists to scroll it.'
+} -Fix 'Shorten platform\windows\keycard.ps1. A card that does not fit silently loses its bottom rows, and no pager exists to scroll it.'
 
 Test-Item 'the rendered config survives non-ASCII (no mojibake, no BOM)' {
     $rendered = Join-Path $Bin 'herdr-config.toml'
@@ -268,7 +267,8 @@ foreach ($script in 'bootstrap.ps1', 'Start-Pitwall.ps1', 'Uninstall.ps1',
                     'Test-Bundle.ps1', 'platform\windows\pane-init.ps1',
                     'platform\windows\Build-HerdrConfig.ps1',
                     'platform\windows\startup-once.ps1',
-                    'platform\windows\edit-split.ps1') {
+                    'platform\windows\edit-split.ps1',
+                    'platform\windows\keycard.ps1') {
     Test-Item "$script parses" ([scriptblock]::Create(@"
         `$errs = `$null
         [void][System.Management.Automation.Language.Parser]::ParseFile(

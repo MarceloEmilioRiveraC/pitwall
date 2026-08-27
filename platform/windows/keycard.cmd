@@ -1,28 +1,28 @@
 @echo off
-rem The ctrl+b i key card: renders docs\keys.md into a herdr popup.
+rem The F1 / ctrl+b i key card, shown in a herdr popup.
 rem
-rem Why a wrapper and not `glow -p` straight from the keybinding.
+rem This wrapper exists for two reasons, both learned the hard way.
 rem
-rem   1. glow's pager shells out to `less`, which does not exist on Windows.
-rem      The popup ran glow, glow died with "unable to run command: exec:
-rem      \"less\": executable file not found in %PATH%", glow exited, and herdr
-rem      closed the popup on the spot. Pressing ctrl+b i looked like a key that
-rem      did nothing at all. bat --paging=always fails the same way.
-rem   2. Without a pager glow renders and EXITS, which closes the popup just as
-rem      fast. Something has to hold it open, hence the pause.
+rem   1. Something has to HOLD the popup open. The card draws and exits in
+rem      milliseconds, and herdr closes a popup the moment its command returns,
+rem      so pressing the key looked like nothing happening at all. `pause`
+rem      holds it; keycard.ps1 says so on its top line.
+rem   2. There is no pager on Windows. The first version rendered markdown with
+rem      `glow -p`, whose pager shells out to `less`, which does not exist here,
+rem      so glow died instantly with "executable file not found" and the popup
+rem      shut again. bat --paging=always fails identically. The card is sized to
+rem      fit one screen instead, which is better anyway: a reference you have to
+rem      scroll is a reference you stop opening.
 rem
-rem So the card is sized to fit one screen instead of scrolling: 34 rendered
-rem rows against the popup's ~43. That is better anyway. A reference you scroll
-rem is a reference you stop opening.
-rem
-rem COLORTERM for the same reason as the renderers: without it glow falls back
-rem to 256-colour approximations of the palette.
+rem The card is drawn by keycard.ps1 rather than rendered from markdown, because
+rem glow paints fenced code blocks as flat uncoloured text and the whole thing
+rem read as one undifferentiated mass. See that file's header.
 
 setlocal
 set "AC_ROOT=%~dp0..\.."
 set "COLORTERM=truecolor"
 
-"%AC_ROOT%\bin\glow.exe" -w 76 "%AC_ROOT%\docs\keys.md"
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0keycard.ps1"
 
-rem Any key closes. keys.md says so on its last line.
+rem Any key closes. keycard.ps1 says so on its top line.
 pause >nul
