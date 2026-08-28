@@ -203,6 +203,32 @@ Test-Item 'pane shell wrapper exists (without it delta, bat and glow are invisib
     Test-Path (Join-Path $Root 'platform\windows\agent-shell.cmd')
 } -Fix 'The repo is incomplete. Re-clone it.'
 
+Test-Item 'notify hook script exists' {
+    Test-Path (Join-Path $Root 'platform\windows\notify.ps1')
+} -Fix 'The repo is incomplete. Re-clone it.'
+
+# The toast is worthless if it lands in-app: the whole point is being told while
+# looking at another window. Guard the value rather than the key, because
+# "herdr" parses fine and silently gives you nothing.
+Test-Item 'toasts are delivered by the OS, not in-app' {
+    $rendered = Join-Path $Bin 'herdr-config.toml'
+    if (-not (Test-Path $rendered)) { return @($false, 'bin\herdr-config.toml missing') }
+    $toast = ([regex]::Match((Get-Content $rendered -Raw), '(?ms)^\[ui\.toast\](.*?)(?=^\[|\z)')).Value
+    @(($toast -match 'delivery\s*=\s*"system"'), ($toast -replace '\s+', ' ').Trim())
+} -Fix 'Set delivery = "system" under [ui.toast] in config\herdr\config.toml, then re-run bootstrap.ps1 -Force. Allowed values are off, herdr, terminal, system.'
+
+# Guards the branch in Get-NotifyHookArgs. The flag must be added for claude and
+# withheld for every other agent, or $Agent stops being swappable.
+Test-Item 'notify hooks attach to claude only' {
+    $src = Get-Content (Join-Path $Root 'platform\windows\startup-once.ps1') -Raw
+    $fn = [regex]::Match($src, '(?s)function Get-NotifyHookArgs.*?\r?\n}\r?\n').Value
+    if (-not $fn) { return @($false, 'Get-NotifyHookArgs not found') }
+    . ([scriptblock]::Create("function Note([string]`$m){}`n$fn"))
+    $yes = Get-NotifyHookArgs -BundleRoot $Root -Agent 'claude'
+    $no  = Get-NotifyHookArgs -BundleRoot $Root -Agent 'codex'
+    @((($yes -match '--settings') -and ($no -eq '')), "claude='$yes' codex='$no'")
+} -Fix 'Get-NotifyHookArgs in startup-once.ps1 must return the --settings flag for claude and an empty string for any other agent.'
+
 Test-Item 'file viewer colour config installed' {
     $herdrExe = Join-Path $Bin 'herdr.exe'
     $dir = (& $herdrExe plugin config-dir herdr-file-viewer 2>$null | Out-String).Trim()

@@ -97,10 +97,18 @@ tab_bar_right = [{ type = "text", text = "F1 keys · ctrl+b f files · ctrl+b z 
 sidebar_start_collapsed = true
 sidebar_collapsed_mode = "compact"
 
-# Notifications in-app rather than through the OS, so a background agent
-# finishing does not steal focus from whatever you are reading.
+# Notifications through the OS, because the whole point of being told is being
+# told when you are NOT looking at this window. An in-app toast is invisible on
+# the monitor you are actually reading, which made the feature pointless.
+#
+# This was "herdr" (in-app) to avoid stealing focus. Windows toasts do not steal
+# focus: they go to the Action Center and the foreground window keeps the
+# keyboard. The original worry did not apply.
+#
+# Allowed values are off, herdr, terminal, system. Confirmed by feeding the
+# validator a bad value and reading what it listed.
 [ui.toast]
-delivery = "herdr"
+delivery = "system"
 delay_seconds = 1
 
 [worktrees]

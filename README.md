@@ -56,6 +56,12 @@ Two reasons, and the second is the one that shaped the design.
    Windows Terminal you already have. You keep the stock terminal for shared
    screens and client work, and launch this one when you want it.
 
+3. **Knowing when to look.** An agent that is blocked waiting for you looks
+   exactly like an agent that is still working, and both look like nothing at
+   all when you are reading another window. pitwall raises a Windows
+   notification when the agent needs a decision or has finished, so you can go
+   and do something else and be called back.
+
 ## What you need
 
 | Requirement | Notes |

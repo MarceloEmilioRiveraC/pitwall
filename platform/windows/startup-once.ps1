@@ -90,6 +90,49 @@ if ($Session) { $sessionArgs = @('--session', $Session) }
 
 $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
 
+# Desktop toasts when the agent is blocked or done, without touching the user's
+# own ~/.claude. Claude Code's --settings takes ADDITIONAL settings from a path,
+# so the bundle carries its hooks in bin\ and the personal profile is untouched
+# in both default and -Clean mode. Returns the flag to append, or '' when there
+# is nothing to add, so the caller stays one line.
+#
+# Claude-Code-shaped on purpose: hook names and the settings schema are its own.
+# A different agent gets an empty string and the same bare command as before,
+# which keeps $Agent swappable the way the parameter promises.
+function Get-NotifyHookArgs {
+    param([string]$BundleRoot, [string]$Agent)
+
+    if ($Agent -notmatch '(^|[\\/])claude(\.exe|\.cmd)?$') { return '' }
+
+    $script = Join-Path $BundleRoot 'platform\windows\notify.ps1'
+    if (-not (Test-Path $script)) { return '' }
+
+    $command = 'powershell -NoProfile -ExecutionPolicy Bypass -File "{0}" -BundleRoot "{1}"' -f $script, $BundleRoot
+    $entry   = @(@{ hooks = @(@{ type = 'command'; command = $command }) })
+    $settings = @{ hooks = @{ Notification = $entry; Stop = $entry } }
+
+    $path = Join-Path $BundleRoot 'bin\claude-hooks.json'
+    try {
+        # bin\ is generated, not committed, so it is not guaranteed to be here.
+        # Without this the write throws and the hooks are skipped in silence,
+        # which is how the check that guards this branch first failed.
+        $dir = Split-Path -Parent $path
+        if (-not (Test-Path $dir)) { New-Item -ItemType Directory -Force -Path $dir | Out-Null }
+
+        # WriteAllText, not Set-Content: under PowerShell 5.1 `-Encoding UTF8`
+        # writes a BOM, and a BOM in a config file has already cost this repo a
+        # day once. See PLAN.md section 8.
+        [System.IO.File]::WriteAllText($path, ($settings | ConvertTo-Json -Depth 6), (New-Object System.Text.UTF8Encoding($false)))
+    }
+    catch {
+        Note "notify: could not write $path, skipping hooks"
+        return ''
+    }
+
+    Note "notify: hooks at $path"
+    return " --settings `"$path`""
+}
+
 function Get-Panes {
     $raw = & $herdr @sessionArgs pane list 2>&1 | Out-String
     if ($raw -notmatch '"pane_id"') { return $null }
@@ -166,9 +209,10 @@ if ($Agent) {
                 Note "agent: pane $($shell.pane_id) never drew a prompt before the deadline"
             }
             else {
-                & $herdr @sessionArgs pane send-text $shell.pane_id $Agent 2>&1 | Out-Null
+                $command = $Agent + (Get-NotifyHookArgs -BundleRoot $BundleRoot -Agent $Agent)
+                & $herdr @sessionArgs pane send-text $shell.pane_id $command 2>&1 | Out-Null
                 & $herdr @sessionArgs pane send-keys $shell.pane_id 'Enter' 2>&1 | Out-Null
-                Note "agent: typed '$Agent' into $($shell.pane_id)"
+                Note "agent: typed '$command' into $($shell.pane_id)"
             }
         }
     }
