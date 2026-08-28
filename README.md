@@ -44,7 +44,7 @@ description.
 
 ## Why this exists
 
-Two reasons, and the second is the one that shaped the design.
+Three reasons, and the second is the one that shaped the design.
 
 1. **Seeing the work.** An agent writing code is only useful if reviewing it is
    fast. A permanent right-hand panel that jumps between changed files turns
@@ -90,7 +90,7 @@ Then install the file viewer once, and verify:
 powershell -ExecutionPolicy Bypass -File .\Test-Bundle.ps1
 ```
 
-`Test-Bundle.ps1` runs 43 checks across three passes: files and configuration, a
+`Test-Bundle.ps1` runs 52 checks across three passes: files and configuration, a
 live herdr session it starts and tears down, and a confirmation that nothing
 outside this folder was touched. Every failure prints what was expected, what was
 found, and how to fix it. If you need to ask someone for help, paste its whole
@@ -215,7 +215,7 @@ measurements and how to change it are in
 pitwall/
   bootstrap.ps1              build bin\ from the manifest
   Start-Pitwall.ps1     the launcher, personal and -Clean modes
-  Test-Bundle.ps1            43 checks: static, live, and global footprint
+  Test-Bundle.ps1            52 checks: static, live, and global footprint
   Uninstall.ps1              reverse the two global side effects
   config/                    cross platform: works as-is on macOS and Linux
     herdr/config.toml        theme, sidebar, keybindings, worktrees
