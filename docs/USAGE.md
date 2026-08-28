@@ -296,6 +296,47 @@ tab bar, then use the `+` dropdown to open the other mode in a new tab.
 | Font, transparency, window chrome, terminal palette | `platform/windows/wt-settings.json` | After `bootstrap.ps1 -Force` |
 | What a pane runs at startup | `platform/windows/pane-init.ps1` | Next launch |
 | Which tools are bundled and their versions | `bootstrap.ps1`, the `$Manifest` block | After `bootstrap.ps1 -Redownload` |
+| When the agent interrupts you, and how | `platform/windows/notify.ps1` | Next launch |
+
+### Notifications
+
+An agent waiting on a permission decision looks identical to one still working,
+and both are invisible when you are reading another window. So Claude Code is
+started with two hooks that raise a notification:
+
+| Event | You see |
+|---|---|
+| `Notification`, the agent wants a decision | "Claude needs you", with the project name |
+| `Stop`, the turn ended | "Claude is finished", with the project name |
+
+Three things worth knowing about how this is wired.
+
+**Nothing is written into your `~/.claude`.** The hooks live in
+`bin/claude-hooks.json`, generated at launch, and are passed with Claude Code's
+`--settings` flag, which loads *additional* settings for that process only. Your
+own configuration is neither read nor modified, in either mode.
+
+**There is no toast code in this bundle.** `notify.ps1` maps the hook event to
+`herdr notification show`, and herdr draws it. Where it is drawn is set by
+`delivery` under `[ui.toast]` in `config/herdr/config.toml`:
+
+| Value | Effect |
+|---|---|
+| `system` | A Windows notification. **The default here**, and the only value that reaches you when pitwall is not the window you are looking at |
+| `herdr` | Drawn inside the pitwall window only |
+| `terminal` | Passed to the terminal emulator |
+| `off` | No toast |
+
+**It attaches to Claude Code only.** The hook names and the settings schema are
+Claude Code's own, so if you point `-Agent` at codex, gemini or opencode, the
+flag is not added and the agent starts exactly as it did before. Everything else
+about swapping agents is unchanged.
+
+If a toast never appears, check in this order: `delivery` is `system`;
+`bin/claude-hooks.json` exists after a launch; Windows notifications are enabled
+for the terminal in Settings, Notifications; and Focus Assist is off. herdr also
+suppresses a second toast while one is still on screen, so two events a second
+apart show only the first.
 
 Two of these are **templates**. They contain a `__BUNDLE__` token that is
 replaced with the real folder path, which is what lets the same repo work on any
