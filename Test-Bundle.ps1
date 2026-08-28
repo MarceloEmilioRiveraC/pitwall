@@ -217,6 +217,27 @@ Test-Item 'toasts are delivered by the OS, not in-app' {
     @(($toast -match 'delivery\s*=\s*"system"'), ($toast -replace '\s+', ' ').Trim())
 } -Fix 'Set delivery = "system" under [ui.toast] in config\herdr\config.toml, then re-run bootstrap.ps1 -Force. Allowed values are off, herdr, terminal, system.'
 
+# The toast names the workspace by asking herdr, and that lookup runs on every
+# notification. If it ever throws instead of returning empty, the toast is lost
+# rather than degraded, which is the silent failure this whole feature exists to
+# avoid. Checked with HERDR_PANE_ID unset, the case that happens whenever the
+# agent is started outside a herdr pane.
+Test-Item 'workspace lookup degrades to empty instead of throwing' {
+    $src = Get-Content (Join-Path $Root 'platform\windows\notify.ps1') -Raw
+    $fn = [regex]::Match($src, '(?s)function Get-WorkspaceLabel.*?\r?\n}\r?\n').Value
+    if (-not $fn) { return @($false, 'Get-WorkspaceLabel not found') }
+    . ([scriptblock]::Create($fn))
+    $prev = $env:HERDR_PANE_ID
+    try {
+        $env:HERDR_PANE_ID = $null
+        $bare = Get-WorkspaceLabel (Join-Path $Bin 'herdr.exe')
+        $env:HERDR_PANE_ID = 'w9:p99'          # a pane that cannot exist
+        $bogus = Get-WorkspaceLabel (Join-Path $Bin 'herdr.exe')
+    }
+    finally { $env:HERDR_PANE_ID = $prev }
+    @((($bare -eq '') -and ($bogus -eq '')), "unset='$bare' bogus='$bogus'")
+} -Fix 'Get-WorkspaceLabel in notify.ps1 must return an empty string, never throw, when HERDR_PANE_ID is missing or names a pane herdr does not have.'
+
 # Guards the branch in Get-NotifyHookArgs. The flag must be added for claude and
 # withheld for every other agent, or $Agent stops being swappable.
 Test-Item 'notify hooks attach to claude only' {
