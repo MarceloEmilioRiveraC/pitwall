@@ -217,6 +217,31 @@ Test-Item 'toasts are delivered by the OS, not in-app' {
     @(($toast -match 'delivery\s*=\s*"system"'), ($toast -replace '\s+', ' ').Trim())
 } -Fix 'Set delivery = "system" under [ui.toast] in config\herdr\config.toml, then re-run bootstrap.ps1 -Force. Allowed values are off, herdr, terminal, system.'
 
+# A launch that finds an agent already running leaves it alone, which is correct,
+# but herdr's session outlives the launcher so that agent can be running without
+# a change made since it started. That is how the notification feature shipped
+# looking broken: the hooks were right and the agent predated them.
+#
+# The nag that fixes it must never cry wolf, so this guards the silent paths. A
+# bundle with no hooks file has nothing to be stale against, and must produce no
+# note and make no herdr call at all.
+Test-Item 'stale-agent warning stays silent when there is nothing to warn about' {
+    $src = Get-Content (Join-Path $Root 'platform\windows\startup-once.ps1') -Raw
+    $fn = [regex]::Match($src, '(?s)function Test-AgentIsCurrent.*?\r?\n}\r?\n').Value
+    if (-not $fn) { return @($false, 'Test-AgentIsCurrent not found') }
+
+    $script:notes = @()
+    . ([scriptblock]::Create("function Note([string]`$m){ `$script:notes += `$m }`n$fn"))
+
+    # A bundle root with no bin\claude-hooks.json in it.
+    $empty = Join-Path ([System.IO.Path]::GetTempPath()) ("pw-" + [guid]::NewGuid().ToString('N'))
+    New-Item -ItemType Directory -Force -Path $empty | Out-Null
+    try   { Test-AgentIsCurrent -Herdr (Join-Path $Bin 'herdr.exe') -SessionArgs @() -BundleRoot $empty }
+    finally { Remove-Item -Recurse -Force $empty -ErrorAction SilentlyContinue }
+
+    @(($script:notes.Count -eq 0), "notes=$($script:notes.Count)")
+} -Fix 'Test-AgentIsCurrent in startup-once.ps1 must return immediately when bin\claude-hooks.json does not exist. Warning when there is nothing to warn about trains people to ignore the warning.'
+
 # The toast names the workspace by asking herdr, and that lookup runs on every
 # notification. If it ever throws instead of returning empty, the toast is lost
 # rather than degraded, which is the silent failure this whole feature exists to

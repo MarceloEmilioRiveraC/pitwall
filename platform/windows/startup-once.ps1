@@ -133,6 +133,39 @@ function Get-NotifyHookArgs {
     return " --settings `"$path`""
 }
 
+# An agent that outlived a change to its own command line is stale, and the only
+# honest signal is its actual command line. herdr reports the foreground process
+# of a pane, so ask it rather than inferring from timestamps.
+#
+# Says nothing when everything is fine, and nothing when it cannot tell. A false
+# "restart your agent" is worse than silence, because it trains you to ignore it.
+function Test-AgentIsCurrent {
+    param([string]$Herdr, [string[]]$SessionArgs, [string]$BundleRoot)
+
+    $hooks = Join-Path $BundleRoot 'bin\claude-hooks.json'
+    if (-not (Test-Path $hooks)) { return }
+
+    try {
+        $agents = (& $Herdr @SessionArgs agent list 2>$null | ConvertFrom-Json).result.agents
+        foreach ($agent in $agents) {
+            $info = & $Herdr @SessionArgs pane process-info --pane $agent.pane_id 2>$null | ConvertFrom-Json
+            $cmdlines = @($info.result.process_info.foreground_processes | ForEach-Object { $_.cmdline })
+            if (-not $cmdlines) { continue }
+
+            # Match on the file name, not the full path: the bundle can be moved
+            # and the running agent would still be carrying the old absolute one.
+            if ($cmdlines -match 'claude-hooks\.json') { continue }
+
+            Note "agent: $($agent.pane_id) predates the notification hooks, telling the user"
+            & $Herdr @SessionArgs notification show 'Notifications are off in the running agent' `
+                --body 'It started before they were set up. Quit it and relaunch to turn them on.' `
+                --sound request 2>&1 | Out-Null
+            return
+        }
+    }
+    catch { }
+}
+
 function Get-Panes {
     $raw = & $herdr @sessionArgs pane list 2>&1 | Out-String
     if ($raw -notmatch '"pane_id"') { return $null }
@@ -184,6 +217,17 @@ if ($Agent) {
     $running = & $herdr @sessionArgs agent list 2>&1 | Out-String
     if ($running -match '"agent"\s*:') {
         Note 'agent: one is already running, leaving it alone'
+
+        # Leaving it alone is right: it may be mid-task, and typing into a pane
+        # that already has an agent is how you lose someone's work. But herdr's
+        # session outlives the launcher, so an agent started before a change to
+        # its command line keeps running WITHOUT that change, indefinitely, and
+        # nothing anywhere says so. That cost a launch that looked broken and
+        # was not: the notification hooks were generated correctly and the agent
+        # predating them never saw them.
+        #
+        # So say it, once, where it will actually be read.
+        Test-AgentIsCurrent -Herdr $herdr -SessionArgs $sessionArgs -BundleRoot $BundleRoot
     }
     else {
         # The work pane: unlabelled (herdr and its plugins label what they
