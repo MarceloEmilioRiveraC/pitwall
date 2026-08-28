@@ -423,6 +423,56 @@ else {
         @(($after -gt $before), "panes $before -> $after")
     } -Fix 'Read `.\bin\herdr.exe plugin log`. Open issue herdrdev/herdr#3024 affects plugin panes on Windows; ctrl+b alt+g (lazygit) is the fallback.'
 
+    # The three checks below drive the agent the way a person does, in the
+    # throwaway session, and read the screen back. Everything above this point
+    # tests configuration; this is the first thing that tests the daily loop.
+    #
+    # Known limit, worth stating rather than discovering later: this cannot test
+    # herdr's OWN keybindings. `pane send-keys` delivers to the pane, below the
+    # layer that interprets the prefix, so `ctrl+b f` cannot be exercised from
+    # here. Only what happens INSIDE a pane is reachable.
+    $agentPane = $null
+    Test-Item 'the agent starts and herdr detects it' {
+        $panes = & $herdr --session $testName pane list 2>&1 | Out-String
+        $shell = ($panes | ConvertFrom-Json).result.panes |
+                 Where-Object { -not $_.label } | Select-Object -First 1
+        if (-not $shell) { return @($false, 'no unlabelled shell pane to start an agent in') }
+
+        $script:agentPane = $shell.pane_id
+        $hooks = Join-Path $Bin 'claude-hooks.json'
+        $cmd = if (Test-Path $hooks) { 'claude --settings "' + $hooks + '"' } else { 'claude' }
+
+        & $herdr --session $testName pane send-text $script:agentPane $cmd 2>$null | Out-Null
+        & $herdr --session $testName pane send-keys $script:agentPane 'Enter' 2>$null | Out-Null
+        Start-Sleep -Seconds 20
+
+        $agents = (& $herdr --session $testName agent list 2>&1 | Out-String | ConvertFrom-Json).result.agents
+        $claude = $agents | Where-Object { $_.agent -eq 'claude' } | Select-Object -First 1
+        @([bool]$claude, "agents=$(($agents | ForEach-Object { $_.agent + '/' + $_.agent_status }) -join ' ')")
+    } -WarnOnly -Fix 'The agent did not start or herdr did not detect it. Read the pane with: .\bin\herdr.exe --session pitwall-selftest pane read <id> --source recent'
+
+    # This is the defect that shipped: hooks generated correctly, agent running
+    # without them, and nothing anywhere saying so. Assert against the running
+    # process, not against the file.
+    Test-Item 'the running agent actually carries the notification hooks' {
+        if (-not (Test-Path (Join-Path $Bin 'claude-hooks.json'))) { return @($true, 'no hooks file, nothing to carry') }
+        if (-not $script:agentPane) { return @($false, 'no agent pane from the previous check') }
+        $info = & $herdr --session $testName pane process-info --pane $script:agentPane 2>&1 | Out-String | ConvertFrom-Json
+        $cmdlines = @($info.result.process_info.foreground_processes | ForEach-Object { $_.cmdline })
+        @(([bool]($cmdlines -match 'claude-hooks\.json')), (($cmdlines | Select-Object -First 1) -replace '.*claude\.exe"?', 'claude'))
+    } -WarnOnly -Fix 'The agent is running without --settings, so no notification will ever fire. startup-once.ps1 adds it only when it STARTS the agent, so an agent that predates the change keeps running without it.'
+
+    # Not pitwall's to fix when it fails: a hook error here comes from whatever
+    # is configured in the user's own ~/.claude. Surfaced anyway, because it is
+    # the first thing anyone sees on every launch, and a permanent red error is
+    # how people learn to stop reading errors.
+    Test-Item 'the agent starts without hook errors' {
+        if (-not $script:agentPane) { return @($true, 'no agent pane to read') }
+        $screen = & $herdr --session $testName pane read $script:agentPane --source recent 2>&1 | Out-String
+        $bad = ($screen -split "`n" | Where-Object { $_ -match 'hook error|hooks are not supported' } | Select-Object -First 1)
+        @((-not $bad), $(if ($bad) { $bad.Trim() } else { 'clean' }))
+    } -WarnOnly -Fix 'Comes from a hook in your own ~/.claude, not from this bundle. Find it with: grep -rn "SessionStart" ~/.claude/plugins --include=*.json, and check every hook it declares is "type": "command". SessionStart does not accept prompt-type hooks.'
+
     Test-Item 'clean mode isolates Claude Code' {
         $cleanDir = Join-Path $Root 'config\claude'
         New-Item -ItemType Directory -Force -Path $cleanDir | Out-Null
