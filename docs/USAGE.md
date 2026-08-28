@@ -306,8 +306,22 @@ started with two hooks that raise a notification:
 
 | Event | You see |
 |---|---|
-| `Notification`, the agent wants a decision | "Claude needs you", with the project name |
-| `Stop`, the turn ended | "Claude is finished", with the project name |
+| `Notification`, the agent wants a decision | "Claude needs you", and which one |
+| `Stop`, the turn ended | "Claude is finished", and which one |
+
+**Which one** is the workspace name from the sidebar, plus the folder in
+brackets when the folder says something the workspace does not:
+
+| Situation | Body |
+|---|---|
+| Working in the workspace root | `pitwall` |
+| Working in a git worktree of it | `pitwall (practical-lederberg-0efcc3)` |
+| Agent started outside a herdr pane | the folder alone |
+
+The workspace is used rather than a pane or tab label because herdr leaves the
+agent pane unlabelled, and the file viewer renames the whole tab to the file it
+is previewing, so a tab reads `README.md · preview` rather than naming your
+project.
 
 Three things worth knowing about how this is wired.
 
