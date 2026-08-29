@@ -78,6 +78,27 @@ function Note([string]$msg) {
 }
 Note "--- launch: session='$Session' agent='$Agent' ---"
 
+# Quote a path for a command string that is about to be handed to herdr and
+# TYPED into a pane's PowerShell.
+#
+# Single quotes, and this was measured rather than chosen for taste. A command
+# string containing double quotes does not survive Windows PowerShell 5.1's
+# native-argument passing, which is the host pane-init.ps1 launches this under:
+#
+#   intended (one argument):  claude --settings "C:\my bundle\...\hooks.json"
+#   what the exe received:    ['claude --settings C:\my',
+#                              'bundle\...\hooks.json']
+#
+# Two arguments, no quotes. herdr accepts the stray second one without a usage
+# error, so the pane silently gets a truncated path and the agent exits. PS 7
+# passes the same string intact, which is why this never showed up in testing:
+# the bundle lives at C:\dev\pitwall and has no space in it.
+#
+# Single quotes survive as one argument, and PowerShell in the pane treats them
+# as a literal path, which is what a path wants. Doubling handles the rare path
+# that contains a quote of its own.
+function Quote([string]$path) { "'" + $path.Replace("'", "''") + "'" }
+
 $herdr = Join-Path $BundleRoot 'bin\herdr.exe'
 if (-not (Test-Path $herdr)) { Note "ABORT: no herdr.exe at $herdr"; return }
 
@@ -144,7 +165,7 @@ function Get-AgentSettingsArgs {
     }
 
     Note "settings: $($settings.Keys -join ', ') at $path"
-    return " --settings `"$path`""
+    return " --settings $(Quote $path)"
 }
 
 # An agent that outlived a change to its own command line is stale, and the only
@@ -162,6 +183,16 @@ function Test-AgentIsCurrent {
     try {
         $agents = (& $Herdr @SessionArgs agent list 2>$null | ConvertFrom-Json).result.agents
         foreach ($agent in $agents) {
+
+            # ONLY claude. Get-AgentSettingsArgs deliberately withholds
+            # --settings from every other agent kind, so a codex, gemini or
+            # opencode pane can never carry the marker and would trip this
+            # warning on every single launch, forever, about a pane where
+            # notifications were never intended. A warning that cannot be
+            # satisfied is worse than no warning: it teaches you to ignore the
+            # one that matters.
+            if ($agent.agent -ne 'claude') { continue }
+
             $info = & $Herdr @SessionArgs pane process-info --pane $agent.pane_id 2>$null | ConvertFrom-Json
             $cmdlines = @($info.result.process_info.foreground_processes | ForEach-Object { $_.cmdline })
             if (-not $cmdlines) { continue }
@@ -171,13 +202,24 @@ function Test-AgentIsCurrent {
             if ($cmdlines -match 'claude-hooks\.json') { continue }
 
             Note "agent: $($agent.pane_id) predates the notification hooks, telling the user"
-            & $Herdr @SessionArgs notification show 'Notifications are off in the running agent' `
+            $reply = & $Herdr @SessionArgs notification show 'Notifications are off in the running agent' `
                 --body 'It started before they were set up. Quit it and relaunch to turn them on.' `
-                --sound request 2>&1 | Out-Null
+                --sound request 2>&1 | Out-String
+
+            # herdr answers `shown` plus a reason, and there are four ways this
+            # quietly does nothing: disabled, rate_limited, no_foreground_client,
+            # busy. Discarding the reply logged "telling the user" for a message
+            # nobody saw.
+            if ($reply -notmatch '"shown"\s*:\s*true') {
+                $why = if ($reply -match '"reason"\s*:\s*"([^"]+)"') { $Matches[1] } else { 'no verdict' }
+                Note "agent: the warning was NOT shown, herdr said '$why'"
+            }
             return
         }
     }
-    catch { }
+    catch {
+        Note "agent: stale-agent check failed, $($_.Exception.Message)"
+    }
 }
 
 function Get-Panes {
@@ -354,13 +396,13 @@ if ($corpse) {
         $cfgDir = (& $herdr @sessionArgs plugin config-dir herdr-file-viewer 2>&1 | Out-String).Trim()
         if ($cfgDir -and $cfgDir.StartsWith('\\?\')) { $cfgDir = $cfgDir.Substring(4) }
 
-        # Quotes escaped so they survive Windows PowerShell's native-argument
-        # stripping and reach herdr intact, same trick the plugin's launcher
-        # uses. A bare path breaks on any bundle under a directory with a space.
+        # Single-quoted, see the Quote helper above. The double-quoted form that
+        # was here does not survive PowerShell 5.1's native-argument passing and
+        # broke on any bundle path containing a space.
         $run = if ($cfgDir) {
-            "`$env:HERDR_PLUGIN_CONFIG_DIR='$cfgDir'; & `"$viewerExe`""
+            "`$env:HERDR_PLUGIN_CONFIG_DIR=$(Quote $cfgDir); & $(Quote $viewerExe)"
         } else {
-            "& `"$viewerExe`""
+            "& $(Quote $viewerExe)"
         }
         & $herdr @sessionArgs pane run $corpse.pane_id $run 2>&1 | Out-Null
         Note "viewer: reused $($corpse.pane_id) in place, no close and no split"

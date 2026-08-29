@@ -269,10 +269,28 @@ Test-Item 'agent settings attach to claude only' {
     $src = Get-Content (Join-Path $Root 'platform\windows\startup-once.ps1') -Raw
     $fn = [regex]::Match($src, '(?s)function Get-AgentSettingsArgs.*?\r?\n}\r?\n').Value
     if (-not $fn) { return @($false, 'Get-AgentSettingsArgs not found') }
-    . ([scriptblock]::Create("function Note([string]`$m){}`n$fn"))
-    $yes = Get-AgentSettingsArgs -BundleRoot $Root -Agent 'claude'
-    $no  = Get-AgentSettingsArgs -BundleRoot $Root -Agent 'codex'
-    @((($yes -match '--settings') -and ($no -eq '')), "claude='$yes' codex='$no'")
+    # Quote is a dependency of the extracted function, so it has to be supplied
+    # alongside the Note stub or the call fails with "term not recognized".
+    $quote = 'function Quote([string]$p){ "''" + $p.Replace("''","''''") + "''" }'
+    . ([scriptblock]::Create("function Note([string]`$m){}`n$quote`n$fn"))
+
+    # Into a temp root, NOT $Root. Called against the bundle this writes a real
+    # bin\claude-hooks.json, so a static check was creating the very file the
+    # live check below then treats as evidence that a launch produced one.
+    $tmp = Join-Path ([System.IO.Path]::GetTempPath()) ("pitwall-test-" + [guid]::NewGuid().ToString('N').Substring(0,8))
+    New-Item -ItemType Directory -Force -Path (Join-Path $tmp 'bin') | Out-Null
+    Copy-Item (Join-Path $Root 'platform') (Join-Path $tmp 'platform') -Recurse -Force
+    try {
+        $yes = Get-AgentSettingsArgs -BundleRoot $tmp -Agent 'claude'
+        $no  = Get-AgentSettingsArgs -BundleRoot $tmp -Agent 'codex'
+    }
+    finally { Remove-Item $tmp -Recurse -Force -ErrorAction SilentlyContinue }
+
+    # Single quotes, not double: a double-quoted path does not survive Windows
+    # PowerShell 5.1's native-argument passing and silently truncates at the
+    # first space. See the Quote helper in startup-once.ps1.
+    $singleQuoted = $yes -match "--settings\s+'"
+    @((($yes -match '--settings') -and $singleQuoted -and ($no -eq '')), "claude='$yes' codex='$no'")
 } -Fix 'Get-AgentSettingsArgs in startup-once.ps1 must return the --settings flag for claude and an empty string for any other agent.'
 
 Test-Item 'file viewer colour config installed' {

@@ -40,7 +40,7 @@ powershell -ExecutionPolicy Bypass -File .\Test-Bundle.ps1
 .\Start-Pitwall.ps1
 ```
 
-`Test-Bundle.ps1` runs 40 checks: files, versions, config validity, a live
+`Test-Bundle.ps1` runs its checks over files, versions, config validity, a live
 herdr session it starts and tears down, and a confirmation that nothing outside
 the folder was touched. It prints a fix line for every failure. Run it whenever
 something is off, and paste its whole output if you need to ask someone.
@@ -328,7 +328,13 @@ Three things worth knowing about how this is wired.
 **Nothing is written into your `~/.claude`.** The hooks live in
 `bin/claude-hooks.json`, generated at launch, and are passed with Claude Code's
 `--settings` flag, which loads *additional* settings for that process only. Your
-own configuration is neither read nor modified, in either mode.
+own configuration is never MODIFIED, in either mode.
+
+It is still READ in
+default mode, which is the point: your login, your plugins and your
+`CLAUDE.md` are what make the agent useful. `--settings` adds to that rather
+than replacing it. `-Clean` is the mode where the personal profile is not
+read either.
 
 **There is no toast code in this bundle.** `notify.ps1` maps the hook event to
 `herdr notification show`, and herdr draws it. Where it is drawn is set by

@@ -67,9 +67,15 @@ $out = & $herdr pane split --direction down --ratio 0.55 --cwd $cwd --focus 2>&1
 if ($out -notmatch '"pane_id"\s*:\s*"([^"]+)"') { Invoke-InThisPane }
 $pane = $Matches[1]
 
-# `& "<path>"` with the quotes escaped so they survive Windows PowerShell 5.1's
-# native-argument quote stripping and reach herdr intact. A bare path breaks on
-# any bundle installed under a directory with a space in it. Same trick the file
-# viewer's own launcher uses, and for the same reason.
-& $herdr pane run $pane "& `"$editCmd`" `"$file`"; exit" | Out-Null
+# Single-quoted, not double.
+#
+# The double-quoted form that was here claimed to survive Windows PowerShell
+# 5.1's native-argument passing. Measured, it does not: the string arrives at
+# the exe split into two arguments with the quotes gone, so any bundle under a
+# path containing a space silently ran the wrong command. Single quotes survive
+# as one argument and PowerShell in the pane reads them as a literal path.
+# Doubling handles a path that contains a quote of its own.
+function Quote([string]$p) { "'" + $p.Replace("'", "''") + "'" }
+
+& $herdr pane run $pane "& $(Quote $editCmd) $(Quote $file); exit" | Out-Null
 & $herdr pane rename $pane 'edit' 2>&1 | Out-Null
