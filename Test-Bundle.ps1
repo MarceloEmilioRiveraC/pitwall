@@ -466,6 +466,19 @@ else {
     # is configured in the user's own ~/.claude. Surfaced anyway, because it is
     # the first thing anyone sees on every launch, and a permanent red error is
     # how people learn to stop reading errors.
+    # The status line is the only thing on screen that knows what the session
+    # costs and how much of the plan is left. Asserted on 'esc interrupt',
+    # which is text only this bundle's status line emits: cost and the rate
+    # windows are absent until the first API response, so they cannot be the
+    # marker in a session that has not been asked anything yet.
+    Test-Item 'the pitwall status line is live in the agent' {
+        if (-not (Test-Path (Join-Path $Bin 'claude-hooks.json'))) { return @($true, 'no settings file, nothing to render') }
+        if (-not $script:agentPane) { return @($true, 'no agent pane to read') }
+        $screen = & $herdr --session $testName pane read $script:agentPane --source recent 2>&1 | Out-String
+        $line = ($screen -split "`n" | Where-Object { $_ -match 'esc interrupt' } | Select-Object -First 1)
+        @([bool]$line, $(if ($line) { $line.Trim() } else { 'no status line on screen' }))
+    } -WarnOnly -Fix 'statusline.ps1 did not render. Run it by hand: echo {} | powershell -File platform\windows\statusline.ps1'
+
     Test-Item 'the agent starts without hook errors' {
         if (-not $script:agentPane) { return @($true, 'no agent pane to read') }
         $screen = & $herdr --session $testName pane read $script:agentPane --source recent 2>&1 | Out-String
