@@ -97,7 +97,7 @@ Enter." **[source]**
 | Windows Terminal 1.24 stable | No, landed in 1.25 | Fixes for this path (#670) | Shift+Enter degraded |
 | **Windows Terminal 1.25 Preview** | **Yes**, since 2026-03-05 | Same fixes | **Chosen** |
 | Alacritty 0.17 | Yes | Explicit fix (#792) | Good alternative |
-| WezTerm | Yes | #2786 open; Windows build dated Feb 2024 | Rejected |
+| WezTerm | Yes, but off by default and only on nightly | Stable tag dated Feb 2024 | Rejected, on the stale-stable ground only. See the correction below |
 
 Verified with `winget show`: stable is 1.24.11911.0, preview is 1.25.1912.0.
 Kitty has not reached the stable channel. **[ran]**
@@ -106,6 +106,37 @@ There is **no settings key** to enable the protocol. The Windows Terminal
 settings schema on `main` contains no `kitty`, no `keyboard`, and no `protocol`
 key. The protocol is negotiated by the application via escape sequence; the
 terminal only has to support it. **[ran]**
+
+### Correction, 2026-08-29: the table above was right for one wrong reason
+
+The whole table was re-derived by measurement rather than documentation, by
+writing the protocol's PUSH form and then its QUERY form and recording what
+each terminal answers. Three things changed. **[ran]**
+
+**The Preview pin is necessary, and now proven.** Windows Terminal 1.24 stable
+answers the keyboard query with nothing at all; 1.25 preview answers correctly
+and round-trips the pushed flags. That was **[source]** from a changelog before
+and is **[ran]** now.
+
+**WezTerm was rejected half on a bad citation.** Issue
+[herdr#2786](https://github.com/herdrdev/herdr/issues/2786) is still open, and
+its own reproduction reads "use WezTerm to connect to a **WSL2** Ubuntu
+distro", against herdr **0.8.0**. This bundle is native Windows with no WSL and
+runs 0.8.2, so that issue is not evidence about this configuration. Whether it
+reproduces natively is untested by anyone.
+
+The rejection still stands, on the other ground: WezTerm's newest tagged
+release is 2024-02-03 and measured silent on the protocol. Only an untagged
+nightly works, and only with `enable_kitty_keyboard = true`, which is off by
+default.
+
+**This is the second time an issue was cited against the wrong configuration**,
+after the herdr#1528 correction in section 3. The lesson generalises past
+versions: check that a bug report's environment is your environment, not only
+that its version is your version.
+
+The measured comparison of eight terminal builds, including Contour and Rio,
+lives outside this repo in the local notes.
 
 ## 5. Neovim was dropped
 
