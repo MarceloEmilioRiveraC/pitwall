@@ -263,17 +263,17 @@ Test-Item 'workspace lookup degrades to empty instead of throwing' {
     @((($bare -eq '') -and ($bogus -eq '')), "unset='$bare' bogus='$bogus'")
 } -Fix 'Get-WorkspaceLabel in notify.ps1 must return an empty string, never throw, when HERDR_PANE_ID is missing or names a pane herdr does not have.'
 
-# Guards the branch in Get-NotifyHookArgs. The flag must be added for claude and
+# Guards the branch in Get-AgentSettingsArgs. The flag must be added for claude and
 # withheld for every other agent, or $Agent stops being swappable.
-Test-Item 'notify hooks attach to claude only' {
+Test-Item 'agent settings attach to claude only' {
     $src = Get-Content (Join-Path $Root 'platform\windows\startup-once.ps1') -Raw
-    $fn = [regex]::Match($src, '(?s)function Get-NotifyHookArgs.*?\r?\n}\r?\n').Value
-    if (-not $fn) { return @($false, 'Get-NotifyHookArgs not found') }
+    $fn = [regex]::Match($src, '(?s)function Get-AgentSettingsArgs.*?\r?\n}\r?\n').Value
+    if (-not $fn) { return @($false, 'Get-AgentSettingsArgs not found') }
     . ([scriptblock]::Create("function Note([string]`$m){}`n$fn"))
-    $yes = Get-NotifyHookArgs -BundleRoot $Root -Agent 'claude'
-    $no  = Get-NotifyHookArgs -BundleRoot $Root -Agent 'codex'
+    $yes = Get-AgentSettingsArgs -BundleRoot $Root -Agent 'claude'
+    $no  = Get-AgentSettingsArgs -BundleRoot $Root -Agent 'codex'
     @((($yes -match '--settings') -and ($no -eq '')), "claude='$yes' codex='$no'")
-} -Fix 'Get-NotifyHookArgs in startup-once.ps1 must return the --settings flag for claude and an empty string for any other agent.'
+} -Fix 'Get-AgentSettingsArgs in startup-once.ps1 must return the --settings flag for claude and an empty string for any other agent.'
 
 Test-Item 'file viewer colour config installed' {
     $herdrExe = Join-Path $Bin 'herdr.exe'

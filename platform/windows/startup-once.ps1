@@ -99,17 +99,31 @@ $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
 # Claude-Code-shaped on purpose: hook names and the settings schema are its own.
 # A different agent gets an empty string and the same bare command as before,
 # which keeps $Agent swappable the way the parameter promises.
-function Get-NotifyHookArgs {
+function Get-AgentSettingsArgs {
     param([string]$BundleRoot, [string]$Agent)
 
     if ($Agent -notmatch '(^|[\\/])claude(\.exe|\.cmd)?$') { return '' }
 
-    $script = Join-Path $BundleRoot 'platform\windows\notify.ps1'
-    if (-not (Test-Path $script)) { return '' }
+    $run = { param($leaf, $extra)
+        $s = Join-Path $BundleRoot "platform\windows\$leaf"
+        if (Test-Path $s) { 'powershell -NoProfile -ExecutionPolicy Bypass -File "{0}"{1}' -f $s, $extra } else { $null }
+    }
 
-    $command = 'powershell -NoProfile -ExecutionPolicy Bypass -File "{0}" -BundleRoot "{1}"' -f $script, $BundleRoot
-    $entry   = @(@{ hooks = @(@{ type = 'command'; command = $command }) })
-    $settings = @{ hooks = @{ Notification = $entry; Stop = $entry } }
+    $settings = @{}
+
+    # Notification and Stop both raise the same toast: the agent wants you.
+    $notify = & $run 'notify.ps1' (' -BundleRoot "{0}"' -f $BundleRoot)
+    if ($notify) {
+        $entry = @(@{ hooks = @(@{ type = 'command'; command = $notify }) })
+        $settings.hooks = @{ Notification = $entry; Stop = $entry }
+    }
+
+    # Cost, context and how close the plan is to its limit. Nothing else on
+    # screen knows any of it.
+    $status = & $run 'statusline.ps1' ''
+    if ($status) { $settings.statusLine = @{ type = 'command'; command = $status; padding = 0 } }
+
+    if ($settings.Count -eq 0) { return '' }
 
     $path = Join-Path $BundleRoot 'bin\claude-hooks.json'
     try {
@@ -125,11 +139,11 @@ function Get-NotifyHookArgs {
         [System.IO.File]::WriteAllText($path, ($settings | ConvertTo-Json -Depth 6), (New-Object System.Text.UTF8Encoding($false)))
     }
     catch {
-        Note "notify: could not write $path, skipping hooks"
+        Note "settings: could not write $path, starting the agent without them"
         return ''
     }
 
-    Note "notify: hooks at $path"
+    Note "settings: $($settings.Keys -join ', ') at $path"
     return " --settings `"$path`""
 }
 
@@ -253,7 +267,7 @@ if ($Agent) {
                 Note "agent: pane $($shell.pane_id) never drew a prompt before the deadline"
             }
             else {
-                $command = $Agent + (Get-NotifyHookArgs -BundleRoot $BundleRoot -Agent $Agent)
+                $command = $Agent + (Get-AgentSettingsArgs -BundleRoot $BundleRoot -Agent $Agent)
                 & $herdr @sessionArgs pane send-text $shell.pane_id $command 2>&1 | Out-Null
                 & $herdr @sessionArgs pane send-keys $shell.pane_id 'Enter' 2>&1 | Out-Null
                 Note "agent: typed '$command' into $($shell.pane_id)"
