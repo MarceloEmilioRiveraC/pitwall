@@ -370,7 +370,20 @@ else {
     $server = Start-Process -FilePath $herdr `
                             -ArgumentList @('--session', $testName, 'server') `
                             -PassThru -WindowStyle Hidden
-    Start-Sleep -Seconds 4
+
+    # Poll, do not sleep a fixed guess.
+    #
+    # This was `Start-Sleep -Seconds 4`, and four seconds stopped being enough
+    # once the machine had a few agents on it: the server took about six, the
+    # status check ran early and failed, and the four checks below it failed as
+    # a cascade off that one. Five red lines, nothing actually broken. A fixed
+    # sleep is always both too short on a loaded machine and wasted on an idle
+    # one, which is the same lesson startup-once.ps1 already carries in note D.
+    $serverDeadline = (Get-Date).AddSeconds(30)
+    while ((Get-Date) -lt $serverDeadline) {
+        if ((& $herdr --session $testName status 2>&1 | Out-String) -match 'status:\s*running') { break }
+        Start-Sleep -Milliseconds 500
+    }
 
     Test-Item 'headless herdr server starts' {
         $out = & $herdr --session $testName status 2>&1 | Out-String
